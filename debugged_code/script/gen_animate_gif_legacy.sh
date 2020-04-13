@@ -11,7 +11,7 @@ INPUT_FILE=$1
 OUTPUT_FILE=$2
 
 #get info
-FRAMES=$(./display --info ${INPUT_FILE} 0 | grep frames | sed -e 's/frames=//g')
+FRAMES=$(../display --info ${INPUT_FILE} 0 | grep frames | sed -e 's/frames=//g')
 
 mkdir -p GIF_TMP
 
@@ -24,7 +24,7 @@ gen_gnuplot_command()
 	echo "set cbr [0:0.14]"
 	echo "set terminal png size 1700,300"
 	printf "set output './GIF_TMP/%04d.png'\n" ${ID}
-	echo "splot \"< ./display --gnuplot ${INPUT_FILE} ${ID} \" u 1:2:4"
+	echo "splot \"< ../display --gnuplot ${INPUT_FILE} ${ID} \" u 1:2:4"
 }
 
 #call if

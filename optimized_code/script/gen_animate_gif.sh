@@ -11,7 +11,7 @@ INPUT_FILE=$1
 OUTPUT_FILE=$2
 
 #get info
-FRAMES=$(./display --info ${INPUT_FILE} 0 | grep frames | sed -e 's/frames=//g')
+FRAMES=$(../display --info ${INPUT_FILE} 0 | grep frames | sed -e 's/frames=//g')
 
 #gen gnuplot command
 gen_gnuplot_command()
@@ -24,7 +24,7 @@ gen_gnuplot_command()
 
 	for tmp in $(seq 0 1 ${FRAMES})
 	do
-		echo "splot \"< ./display --gnuplot ${INPUT_FILE} $tmp\" u 1:2:4"
+		echo "splot \"< ../display --gnuplot ${INPUT_FILE} $tmp\" u 1:2:4"
 	done
 }
 

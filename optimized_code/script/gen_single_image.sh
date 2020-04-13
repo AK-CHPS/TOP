@@ -19,7 +19,7 @@ gen_gnuplot_command()
 	echo "set cbr [0:0.14]"
 	echo "set terminal png size 1700,300"
 	echo "set output '${OUTPUT_FILE}'"
-	echo "splot \"< ./display --gnuplot ${INPUT_FILE} ${IMG_ID} \" u 1:2:4"
+	echo "splot \"< ../display --gnuplot ${INPUT_FILE} ${IMG_ID} \" u 1:2:4"
 }
 
 #call if
