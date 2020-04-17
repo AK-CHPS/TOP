@@ -28,6 +28,12 @@ typedef struct Mesh
 	int width;
 	/** Largeur du maillage local (mailles fantome comprises). **/
 	int height;
+	/** Tableau de cellule speciales */
+	int *spec_tab;
+	/** Compteur de cellule speciales */
+	int spec_cpt;
+	/** Taille du tableau de cellule speciales */
+	int spec_size;
 } Mesh;
 
 /*********************  ENUM  ***********************/
@@ -65,8 +71,6 @@ typedef struct lbm_mesh_type_s
 /** Structure des en-têtes utilisée dans le fichier de sortie. **/
 typedef struct lbm_file_header_s
 {
-	/** Pour validation du format du fichier. **/
-	//uint32_t magick; // pk ?
 	/** Taille totale du maillage simulé (hors mailles fantômes). **/
 	uint32_t mesh_width;
 	/** Taille totale du maillage simulé (hors mailles fantômes). **/
@@ -106,7 +110,8 @@ void save_frame(FILE * fp,const Mesh * mesh);
 
 /*******************  FUNCTION  *********************/
 void fatal(const char * message);
-
+/*******************  FUNCTION  *********************/
+void add_spec_cell(Mesh *mesh, int i, int j);
 /*******************  FUNCTION  *********************/
 /**
  * Fonction à utiliser pour récupérer une cellule du maillage en fonction de ses coordonnées.

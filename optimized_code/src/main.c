@@ -22,7 +22,6 @@ void write_file_header(FILE * fp,lbm_comm_t * mesh_comm)
 {
   //setup header values
   lbm_file_header_t header;
-  //header.magick      = RESULT_MAGICK;
   header.mesh_height = MESH_HEIGHT;
   header.mesh_width  = MESH_WIDTH;
   header.lines       = mesh_comm->nb_y;
@@ -58,9 +57,6 @@ FILE * open_output_file(lbm_comm_t * mesh_comm)
 }
 
 void close_file(FILE* fp){
-  //wait all before closing 
-  //MPI_Barrier(MPI_COMM_WORLD); // lol
-  //close file
   fclose(fp);
 }
 
@@ -84,31 +80,25 @@ void save_frame(FILE * fp,const Mesh * mesh)
 
   //loop on all values
   cnt = 0;
-  for ( i = 1 ; i < mesh->width - 1 ; i++)
-    {
-      for ( j = 1 ; j < mesh->height - 1 ; j++)
-	{
-	  //compute macrospic values
-	  density = get_cell_density(Mesh_get_cell(mesh, i, j));
-	  get_cell_velocity(v,Mesh_get_cell(mesh, i, j),density);
-	  norm = sqrt(get_vect_norme_2(v,v));
 
-	  //fill buffer
-	  buffer[cnt].density = density;
-	  buffer[cnt].v = norm;
-	  cnt++;
+  for ( i = 1 ; i < mesh->width - 1 ; i++){
+    for(j = 1; j < mesh->height - 1 ; j++){
+      //compute macrospic values
+      density = get_cell_density(Mesh_get_cell(mesh, i, j));
+      get_cell_velocity(v,Mesh_get_cell(mesh, i, j),density);
+      norm = sqrt(get_vect_norme_2(v,v));
 
-	  //errors
-	  assert(cnt <= WRITE_BUFFER_ENTRIES);
-			
-	  //flush buffer if full
-	  if (cnt == WRITE_BUFFER_ENTRIES)
-	    {
-	      fwrite(buffer,sizeof(lbm_file_entry_t),cnt,fp);
-	      cnt = 0;
-	    }
-	}
-    }
+      //fill buffer
+      buffer[cnt].density = density;
+      buffer[cnt].v = norm;
+      cnt++;
+
+      //flush buffer if full
+      if (cnt == WRITE_BUFFER_ENTRIES){
+        fwrite(buffer,sizeof(lbm_file_entry_t),cnt,fp);
+        cnt = 0;}      
+    }    
+  }
 
   //final flush
   if (cnt != 0)
@@ -144,7 +134,7 @@ int main(int argc, char * argv[])
   if (rank == RANK_MASTER)
     print_config();
 	
-  MPI_Barrier(MPI_COMM_WORLD); // k : wait for config 
+  MPI_Barrier(MPI_COMM_WORLD);
 
   //init structures, allocate memory...
   lbm_comm_init( &mesh_comm, rank, comm_size, MESH_WIDTH, MESH_HEIGHT);
@@ -171,40 +161,32 @@ int main(int argc, char * argv[])
   MPI_Barrier(MPI_COMM_WORLD);
 
   //time steps
-  for ( i = 1 ; i < ITERATIONS ; i++ )
-    {
-      //print progress
-      if( (rank == RANK_MASTER) && (i%500 == 0) )
-	printf("Progress [%5d / %5d]\n",i,ITERATIONS-1);
+  for ( i = 1 ; i < ITERATIONS ; i++ ){
+    if((rank == RANK_MASTER) && (i%500 == 0))
+	     printf("Progress [%5d / %5d]\n",i,ITERATIONS-1);
 
-      //compute special actions (border, obstacle...)
-      special_cells( &mesh, &mesh_type, &mesh_comm);
+    //compute special actions (border, obstacle...)
+    special_cells( &mesh, &mesh_type, &mesh_comm);
       
-      //need to wait all before doing next step
-      MPI_Barrier(MPI_COMM_WORLD);
+    //compute collision term
+    collision( &temp, &mesh);
 
-      //compute collision term
-      collision( &temp, &mesh);
+    MPI_Barrier(MPI_COMM_WORLD);
       
-      //need to wait all before doing next step
-      MPI_Barrier(MPI_COMM_WORLD);
+    //propagate values from node to neighboors
+    lbm_comm_ghost_exchange( &mesh_comm, &temp);
 
-      //propagate values from node to neighboors
-      lbm_comm_ghost_exchange( &mesh_comm, &temp );
-      propagation( &mesh, &temp);
+    propagation( &mesh, &temp);
 
-      //need to wait all before doing next step
-      MPI_Barrier(MPI_COMM_WORLD);
-      
-      //save step
-      if ( i % WRITE_STEP_INTERVAL == 0 && lbm_gbl_config.output_filename != NULL )
-	save_frame_all_domain(fp, &mesh, &temp_render );
-    }
+    //MPI_Barrier(MPI_COMM_WORLD);
 
-  if( rank == RANK_MASTER && fp != NULL)
-    {
-      close_file(fp);
-    }
+    //save step
+    if(i % WRITE_STEP_INTERVAL == 0 && lbm_gbl_config.output_filename != NULL )
+	     save_frame_all_domain(fp, &mesh, &temp_render );
+  }
+
+  if( rank == RANK_MASTER && fp != NULL){
+      close_file(fp);}
 
   //Free memory
   lbm_comm_release( &mesh_comm );

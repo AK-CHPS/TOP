@@ -64,14 +64,10 @@ double get_cell_density(const lbm_mesh_cell_t cell)
 	int k;
 	double res = 0.0;
 
-	//errors
-	assert( cell != NULL );
-
 	//loop on directions
 	for( k = 0 ; k < DIRECTIONS ; k++)
 		res += cell[k];
 
-	//return res
 	return res;
 }
 
@@ -85,10 +81,6 @@ void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell,double cell_density)
 {
 	//vars
 	int k,d;
-
-	//errors
-	assert(v != NULL);
-	assert(cell != NULL);
 
 	//loop on all dimensions
 	for ( d = 0 ; d < DIMENSIONS ; d++)
@@ -129,10 +121,7 @@ double compute_equilibrium_profile(Vector velocity,double density,int direction)
 	p2 = p * p;
 
 	//terms without density and direction weight
-	feq = 1.0
-		+ (3.0 * p)
-		+ ((9.0 / 2.0) * p2)
-		- ((3.0 / 2.0) * v2);
+	feq = 1.0 + (3.0 * p) + (4.5 * p2) - (1.5 * v2);
 
 	//mult all by density and direction weight
 	feq *= equil_weight[direction] * density;
@@ -174,15 +163,10 @@ void compute_bounce_back(lbm_mesh_cell_t cell)
 {
 	//vars
 	int k;
-	double tmp[DIRECTIONS];
 
 	//compute bounce back
 	for ( k = 0 ; k < DIRECTIONS ; k++)
-		tmp[k] = cell[opposite_of[k]];
-
-	//compute bounce back
-	for ( k = 0 ; k < DIRECTIONS ; k++)
-		cell[k] = tmp[k];
+		cell[k] = cell[opposite_of[k]];
 }
 
 /*******************  FUNCTION  *********************/
@@ -223,15 +207,14 @@ void compute_inflow_zou_he_poiseuille_distr( const Mesh *mesh, lbm_mesh_cell_t c
 	v = helper_compute_poiseuille(id_y,mesh->height);
 
 	//compute rho from u and inner flow on surface
-	density = (cell[0] + cell[2] + cell[4] + 2 * ( cell[3] + cell[6] + cell[7] )) / (1.0 - v) ;
+	density = (cell[0] + cell[2] + cell[4] + 2 * ( cell[3] + cell[6] + cell[7] )) * (1.0 - v);
 
 	//now compute unknown microscopic values
+	double a = 0.166667 * (density * v);
 	cell[1] = cell[3];// + (2.0/3.0) * density * v_y <--- no velocity on Y so v_y = 0
-	cell[5] = cell[7] - (1.0/2.0) * (cell[2] - cell[4])
-	                         + (1.0/6.0) * (density * v);
+	cell[5] = cell[7] - 0.5 * (cell[2] - cell[4]) + a;
 	                       //+ (1.0/2.0) * density * v_y    <--- no velocity on Y so v_y = 0
-	cell[8] = cell[6] + (1.0/2.0) * (cell[2] - cell[4])
-	                         + (1.0/6.0) * (density * v);
+	cell[8] = cell[6] + 0.5 * (cell[2] - cell[4]) + a;
 	                       //- (1.0/2.0) * density * v_y    <--- no velocity on Y so v_y = 0
 
 	//no need to copy already known one as the value will be "loss" in the wall at propagatation time
@@ -249,7 +232,6 @@ void compute_inflow_zou_he_poiseuille_distr( const Mesh *mesh, lbm_mesh_cell_t c
 void compute_outflow_zou_he_const_density(lbm_mesh_cell_t cell)
 {
 	//vars
-	const double density = 1.0;
 	double v;
 
 	//errors
@@ -258,16 +240,13 @@ void compute_outflow_zou_he_const_density(lbm_mesh_cell_t cell)
 	#endif
 
 	//compute macroscopic v depeding on inner flow going onto the wall
-	v = -1.0 + (1.0 / density) * (cell[0] + cell[2] + cell[4] + 2 * (cell[1] + cell[5] + cell[8]));
+	v = (cell[0] + cell[2] + cell[4] + 2 * (cell[1] + cell[5] + cell[8])) - 1.0;
 
 	//now can compute unknown microscopic values
-	cell[3] = cell[1] - (2.0/3.0) * density * v;
-	cell[7] = cell[5] + (1.0/2.0) * (cell[2] - cell[4])
-	                       //- (1.0/2.0) * (density * v_y)    <--- no velocity on Y so v_y = 0
-	                         - (1.0/6.0) * (density * v);
-	cell[6] = cell[8] + (1.0/2.0) * (cell[4] - cell[2])
-	                       //+ (1.0/2.0) * (density * v_y)    <--- no velocity on Y so v_y = 0
-	                         - (1.0/6.0) * (density * v);
+	double a = 0.166667 * v;
+	cell[3] = cell[1] - 0.66667 * v;
+	cell[7] = cell[5] + 0.5 * (cell[2] - cell[4]) - a;
+	cell[6] = cell[8] + 0.5 * (cell[4] - cell[2]) - a;
 }
 
 /*******************  FUNCTION  *********************/
@@ -276,28 +255,21 @@ void compute_outflow_zou_he_const_density(lbm_mesh_cell_t cell)
 **/
 void special_cells(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm_comm_t * mesh_comm)
 {
-	//vars
-	int i,j;
-
-	//loop on all inner cells
-	for( i = 1 ; i < mesh->width - 1 ; i++ )
-	{
-		for( j = 1 ; j < mesh->height - 1 ; j++)
+	for(int i = 0; i < mesh->spec_size; i++){
+		switch (*( lbm_cell_type_t_get_cell( mesh_type , mesh->spec_tab[i*2], mesh->spec_tab[i*2+1]) ))
 		{
-			switch (*( lbm_cell_type_t_get_cell( mesh_type , i, j) ))
-			{
-				case CELL_FUILD:
-					break;
-				case CELL_BOUNCE_BACK:
-					compute_bounce_back(Mesh_get_cell(mesh, i, j));
-					break;
-				case CELL_LEFT_IN:
-					compute_inflow_zou_he_poiseuille_distr(mesh, Mesh_get_cell(mesh, i, j) ,j + mesh_comm->y);
-					break;
-				case CELL_RIGHT_OUT:
-					compute_outflow_zou_he_const_density(Mesh_get_cell(mesh, i, j));
-					break;
-			}
+			case CELL_BOUNCE_BACK:
+				compute_bounce_back(Mesh_get_cell(mesh, mesh->spec_tab[i*2], mesh->spec_tab[i*2+1]));
+				break;
+			case CELL_LEFT_IN:
+				compute_inflow_zou_he_poiseuille_distr(mesh, Mesh_get_cell(mesh, mesh->spec_tab[i*2], mesh->spec_tab[i*2+1]) ,mesh->spec_tab[i*2+1] + mesh_comm->y);
+				break;
+			case CELL_RIGHT_OUT:
+				compute_outflow_zou_he_const_density(Mesh_get_cell(mesh, mesh->spec_tab[i*2], mesh->spec_tab[i*2+1]));
+				break;
+			default:
+				fprintf(stderr, "Erreur type\n");
+				break;
 		}
 	}
 }
@@ -316,9 +288,8 @@ void collision(Mesh * mesh_out,const Mesh * mesh_in)
 	assert(mesh_in->width == mesh_out->width);
 	assert(mesh_in->height == mesh_out->height);
 
-	//loop on all inner cells
-	for( j = 1 ; j < mesh_in->height - 1 ; j++)
-		for( i = 1 ; i < mesh_in->width - 1 ; i++ )
+	for( i = 1 ; i < mesh_in->width - 1 ; i++ )
+		for( j = 1 ; j < mesh_in->height - 1 ; j++)
 			compute_cell_collision(Mesh_get_cell(mesh_out, i, j),Mesh_get_cell(mesh_in, i, j));
 }
 
@@ -334,15 +305,9 @@ void propagation(Mesh * mesh_out,const Mesh * mesh_in)
 	int i,j,k;
 	int ii,jj;
 
-	//loop on all cells
-	for ( j = 0 ; j < mesh_out->height ; j++)
-	{
-		for ( i = 0 ; i < mesh_out->width; i++)
-		{
-			//for all direction
-			for ( k  = 0 ; k < DIRECTIONS ; k++)
-			{
-				//compute destination point
+	for ( i = 0 ; i < mesh_out->width; i++){
+		for ( j = 0 ; j < mesh_out->height ; j++){
+			for ( k  = 0 ; k < DIRECTIONS ; k++){
 				ii = (i + direction_matrix[k][0]);
 				jj = (j + direction_matrix[k][1]);
 				//propagate to neighboor nodes

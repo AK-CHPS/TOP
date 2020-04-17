@@ -77,10 +77,10 @@ void lbm_comm_init( lbm_comm_t * mesh_comm, int rank, int comm_size, int width, 
   int rank_y;
 
   //compute splitting
-  nb_y = lbm_helper_pgcd(comm_size,width);
-  nb_x = comm_size / nb_y;
-  //nb_x = lbm_helper_pgcd(comm_size,width);
-  //nb_y = comm_size / nb_x;
+  //nb_y = lbm_helper_pgcd(comm_size,width);
+  //nb_x = comm_size / nb_y;
+  nb_x = lbm_helper_pgcd(comm_size,width);
+  nb_y = comm_size / nb_x;
 
   //check
   assert(nb_x * nb_y == comm_size);
@@ -114,12 +114,20 @@ void lbm_comm_init( lbm_comm_t * mesh_comm, int rank, int comm_size, int width, 
   mesh_comm->corner_id[CORNER_BOTTOM_RIGHT] = helper_get_rank_id(nb_x,nb_y,rank_x + 1,rank_y + 1);
 
   //if more than 1 on y, need transmission buffer
-  if (nb_y > 1)
-    {
-      mesh_comm->buffer = malloc(sizeof(double) * DIRECTIONS * width / nb_x);
-    } else {
+  if(nb_y > 1 && nb_x > 1){
+    int buff_size = ((width/nb_x) > (height/nb_y)) ? (width/nb_x) : (height/nb_y);
+    mesh_comm->buffer = malloc(sizeof(double) * DIRECTIONS * buff_size);
+  }else if(nb_y > 1){
+    int buff_size = (width/nb_x);
+    mesh_comm->buffer = malloc(sizeof(double) * DIRECTIONS * buff_size);
+  }else if(nb_x > 1){
+    int buff_size = (height/nb_y);
+    mesh_comm->buffer = malloc(sizeof(double) * DIRECTIONS * buff_size);
+  }else{
     mesh_comm->buffer = NULL;
   }
+
+  mesh_comm->request_cpt = 0;
 
   //if debug print comm
 #ifndef NDEBUG
@@ -152,27 +160,32 @@ void lbm_comm_release( lbm_comm_t * mesh_comm )
  * @param mesh_comm MeshComm à utiliser
  * @param mesh_to_process Mesh a utiliser lors de l'échange des mailles fantomes
  **/
-void lbm_comm_sync_ghosts_horizontal( lbm_comm_t * mesh, Mesh *mesh_to_process, lbm_comm_type_t comm_type, int target_rank, int x )
+void lbm_comm_sync_ghosts_horizontal( lbm_comm_t * mesh_comm, Mesh *mesh_to_process, lbm_comm_type_t comm_type, int target_rank, int x )
 {
-  //vars
-  MPI_Status status;
-
   //if target is -1, no comm
   if (target_rank == -1)
     return;
 
-  int y;
+  int y, k, flag = 0;
 
   switch (comm_type)
     {
     case COMM_SEND:
-      for( y = 0 ; y < mesh->height-2 ; y++ )
-	MPI_Send( &Mesh_get_col( mesh_to_process, x )[y], DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD);
-      break;
+      for( y = 0 ; y < mesh_to_process->height-2 ; y++ )
+        for ( k = 0 ; k < DIRECTIONS ; k++)
+          mesh_comm->buffer[y * DIRECTIONS + k] = Mesh_get_cell(mesh_to_process, x, y)[k];
+      MPI_Isend( mesh_comm->buffer, (mesh_to_process->height-2) * DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, &mesh_comm->requests[mesh_comm->request_cpt++]);
+    break;
     case COMM_RECV:
-      for( y = 0 ; y < mesh->height-2 ; y++ )
-	MPI_Recv(  &Mesh_get_col( mesh_to_process, x )[y], DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD,&status);
-      break;
+      MPI_Iprobe(target_rank, 0, MPI_COMM_WORLD, &flag, MPI_STATUS_IGNORE);
+      if(flag){
+        MPI_Recv( mesh_comm->buffer, (mesh_to_process->height-2) * DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        for( y = 0 ; y < mesh_to_process->height-2 ; y++ )
+          for ( k = 0 ; k < DIRECTIONS ; k++)
+            Mesh_get_cell(mesh_to_process, x, y)[k] = mesh_comm->buffer[y * DIRECTIONS + k];
+        mesh_comm->request_cpt--;
+      }
+	  break;
     default:
       fatal("Unknown type of communication.");
     }
@@ -184,10 +197,9 @@ void lbm_comm_sync_ghosts_horizontal( lbm_comm_t * mesh, Mesh *mesh_to_process, 
  * @param mesh_comm MeshComm à utiliser
  * @param mesh_to_process Mesh a utiliser lors de l'échange des mailles fantomes
  **/
-void lbm_comm_sync_ghosts_diagonal( lbm_comm_t * mesh, Mesh *mesh_to_process, lbm_comm_type_t comm_type, int target_rank, int x ,int y)
+void lbm_comm_sync_ghosts_diagonal( lbm_comm_t * mesh_comm, Mesh *mesh_to_process, lbm_comm_type_t comm_type, int target_rank, int x ,int y)
 {
-  //vars
-  MPI_Status status;
+int flag = 0;
 
   //if target is -1, no comm
   if (target_rank == -1)
@@ -196,10 +208,14 @@ void lbm_comm_sync_ghosts_diagonal( lbm_comm_t * mesh, Mesh *mesh_to_process, lb
   switch (comm_type)
     {
     case COMM_SEND:
-      MPI_Send( Mesh_get_cell( mesh_to_process, x, y ), DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD);
+      MPI_Isend( Mesh_get_cell( mesh_to_process, x, y ), DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, &mesh_comm->requests[mesh_comm->request_cpt++]);
       break;
     case COMM_RECV:
-      MPI_Recv( Mesh_get_cell( mesh_to_process, x, y ), DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, &status);
+      MPI_Iprobe(target_rank, 0, MPI_COMM_WORLD, &flag, MPI_STATUS_IGNORE);
+      if(flag){
+        MPI_Recv( Mesh_get_cell( mesh_to_process, x, y ), DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        mesh_comm->request_cpt--;
+      }
       break;
     default:
       fatal("Unknown type of communication.");
@@ -213,11 +229,9 @@ void lbm_comm_sync_ghosts_diagonal( lbm_comm_t * mesh, Mesh *mesh_to_process, lb
  * @param mesh_comm MeshComm à utiliser
  * @param mesh_to_process Mesh a utiliser lors de l'échange des mailles fantomes
  **/
-void lbm_comm_sync_ghosts_vertical( lbm_comm_t * mesh, Mesh *mesh_to_process, lbm_comm_type_t comm_type, int target_rank, int y )
+void lbm_comm_sync_ghosts_vertical( lbm_comm_t * mesh_comm, Mesh *mesh_to_process, lbm_comm_type_t comm_type, int target_rank, int y )
 {
-  //vars
-  MPI_Status status;
-  int x, k;
+  int x, k, flag = 0;
 
   //if target is -1, no comm
   if (target_rank == -1)
@@ -227,13 +241,19 @@ void lbm_comm_sync_ghosts_vertical( lbm_comm_t * mesh, Mesh *mesh_to_process, lb
     {
     case COMM_SEND:
       for ( x = 1 ; x < mesh_to_process->width - 2 ; x++)
-	for ( k = 0 ; k < DIRECTIONS ; k++)
-	  MPI_Send( &Mesh_get_cell(mesh_to_process, x, y)[k], 1, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD);
+        for ( k = 0 ; k < DIRECTIONS ; k++)
+          mesh_comm->buffer[x * DIRECTIONS + k] = Mesh_get_cell(mesh_to_process, x, y)[k];
+      MPI_Isend( mesh_comm->buffer, (mesh_to_process->width-2) * DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, &mesh_comm->requests[mesh_comm->request_cpt++]);
       break;
     case COMM_RECV:
-      for ( x = 1 ; x < mesh_to_process->width - 2 ; x++)
-	for ( k = 0 ; k < DIRECTIONS ; k++)
-	  MPI_Recv( &Mesh_get_cell(mesh_to_process, x, y)[k], DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD,&status);
+      MPI_Iprobe(target_rank, 0, MPI_COMM_WORLD, &flag, MPI_STATUS_IGNORE);
+      if(flag){
+        MPI_Recv( mesh_comm->buffer, (mesh_to_process->width-2) * DIRECTIONS, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        for ( x = 1 ; x < mesh_to_process->width - 2 ; x++)
+          for ( k = 0 ; k < DIRECTIONS ; k++)
+            Mesh_get_cell(mesh_to_process, x, y)[k] = mesh_comm->buffer[x * DIRECTIONS + k];  
+        mesh_comm->request_cpt--;  
+      }
       break;
     default:
       fatal("Unknown type of communication.");
@@ -251,74 +271,47 @@ void lbm_comm_ghost_exchange(lbm_comm_t * mesh, Mesh *mesh_to_process )
 
   //Left to right phase : on reçoit à droite et on envoie depuis la gauche
   lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_SEND,mesh->right_id,mesh->width - 2);
-  lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_RECV,mesh->left_id,0);
-
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
 	
   // Right to left phase : on reçoit à gauche et on envoie depuis la droite
   lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_SEND,mesh->left_id,1);
-  lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_RECV,mesh->right_id,mesh->width - 1);
-
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
 	
   //top to bottom : on reçoit en bas et on envoie depuis le hauteur
   lbm_comm_sync_ghosts_vertical(mesh,mesh_to_process,COMM_SEND,mesh->bottom_id,mesh->height - 2);
-  lbm_comm_sync_ghosts_vertical(mesh,mesh_to_process,COMM_RECV,mesh->top_id,0);
-
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
 
   // Right to left phase : on reçoit en haut et on envoie depuis le bas
   lbm_comm_sync_ghosts_vertical(mesh,mesh_to_process,COMM_SEND,mesh->top_id,1);
-  lbm_comm_sync_ghosts_vertical(mesh,mesh_to_process,COMM_RECV,mesh->bottom_id,mesh->height - 1);
-
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
 
   //top left
   lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_SEND,mesh->corner_id[CORNER_TOP_LEFT],1,1);
-  lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_BOTTOM_RIGHT],mesh->width - 1,mesh->height - 1);
-
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
 
   //bottom left
   lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_SEND,mesh->corner_id[CORNER_BOTTOM_LEFT],1,mesh->height - 2);
-  lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_TOP_RIGHT],mesh->width - 1,0);
-
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
 
   //top right
   lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_SEND,mesh->corner_id[CORNER_TOP_RIGHT],mesh->width - 2,1);
-  lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_BOTTOM_LEFT],0,mesh->height - 1);
-
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  //bottom left
-  lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_SEND,mesh->corner_id[CORNER_BOTTOM_LEFT],1,mesh->height - 2);
-  lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_TOP_RIGHT],mesh->width - 1,0);
-
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
 
   //bottom right
   lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_SEND,mesh->corner_id[CORNER_BOTTOM_RIGHT],mesh->width - 2,mesh->height - 2);
-  lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_TOP_LEFT],0,0);
 
-  //prevend comm mixing to avoid bugs
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  // Right to left phase : on reçoit à gauche et on envoie depuis la droite
-  lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_SEND,mesh->left_id,1);
-  lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_RECV,mesh->right_id,mesh->width - 1);
-	
-  //wait for IO to finish, VERY important, do not remove.
-  //   FLUSH_INOUT();
+  do{
+    lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_RECV,mesh->left_id,0);
+    lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_RECV,mesh->right_id,mesh->width - 1);
+    lbm_comm_sync_ghosts_vertical(mesh,mesh_to_process,COMM_RECV,mesh->top_id,0);
+    lbm_comm_sync_ghosts_vertical(mesh,mesh_to_process,COMM_RECV,mesh->bottom_id,mesh->height - 1);
+    lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_BOTTOM_RIGHT],mesh->width - 1,mesh->height - 1);
+    lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_TOP_RIGHT],mesh->width - 1,0);
+    lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_BOTTOM_LEFT],0,mesh->height - 1);
+    lbm_comm_sync_ghosts_diagonal(mesh,mesh_to_process,COMM_RECV,mesh->corner_id[CORNER_TOP_LEFT],0,0);
+    }while(mesh->request_cpt);
+  
 }
+
+// permet d'attendre que les echanges de mailles fantes aient eu lieu 
+void lbm_comm_sync_ghosts_wait( lbm_comm_t * mesh_comm)
+{
+  MPI_Waitall(mesh_comm->request_cpt, mesh_comm->requests, MPI_STATUS_IGNORE);
+}
+
 
 /*******************  FUNCTION  *********************/
 /**
@@ -338,30 +331,21 @@ void save_frame_all_domain( FILE * fp, Mesh *source_mesh, Mesh *temp )
   MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
   /* If whe have more than one process */
-  if( 1 < comm_size )
-    {
-      if( rank == 0 )
-	{
-	  /* Rank 0 renders its local Mesh */
-	  save_frame(fp,source_mesh);
-	  /* Rank 0 receives & render other processes meshes */
-	  for( i = 1 ; i < comm_size ; i++ )
-	    { // k : il attend de recevoir dans l'ordre num des rank a changer mais je suis sur autre chose la
-	      MPI_Recv( temp->cells, source_mesh->width  * source_mesh->height * DIRECTIONS, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &status );
-	      save_frame(fp,temp);
-	    }
-	}
-      else
-	{
-	  /* All other ranks send their local mesh */
-	  MPI_Send( source_mesh->cells, source_mesh->width * source_mesh->height * DIRECTIONS, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD );
-	}
-    }
-  else
-    {
-      /* Only 0 renders its local mesh */
-      save_frame(fp,source_mesh);
-    }
+  if( 1 < comm_size ){
+    if( rank == 0 ){
+	    /* Rank 0 renders its local Mesh */
+	    save_frame(fp,source_mesh);
+	    /* Rank 0 receives & render other processes meshes */
+	    for( i = 1 ; i < comm_size ; i++ ){
+        MPI_Recv( temp->cells, source_mesh->width  * source_mesh->height * DIRECTIONS, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &status );
+	      save_frame(fp,temp);}
+	  }else{
+	    /* All other ranks send their local mesh */
+	    MPI_Send( source_mesh->cells, source_mesh->width * source_mesh->height * DIRECTIONS, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD );}
+  }else{
+    /* Only 0 renders its local mesh */
+    save_frame(fp,source_mesh);
+  }
   
 }
 
