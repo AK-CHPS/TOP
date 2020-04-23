@@ -40,9 +40,6 @@ void setup_init_state_global_poiseuille_profile(Mesh * mesh, lbm_mesh_type_t * m
   Vector v = {0.0,0.0};
   const double density = 1.0;
 
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-
   for ( j = 0 ; j < mesh->height ; j++){
     for ( i = 0 ; i < mesh->width ; i++){
       *( lbm_cell_type_t_get_cell( mesh_type , i, j) ) = CELL_FUILD;

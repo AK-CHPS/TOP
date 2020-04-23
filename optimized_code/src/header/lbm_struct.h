@@ -106,9 +106,6 @@ void lbm_mesh_type_t_init( lbm_mesh_type_t * mesh, int width,  int height );
 void lbm_mesh_type_t_release( lbm_mesh_type_t * mesh );
 
 /*******************  FUNCTION  *********************/
-void save_frame(FILE * fp,const Mesh * mesh);
-
-/*******************  FUNCTION  *********************/
 void fatal(const char * message);
 /*******************  FUNCTION  *********************/
 void add_spec_cell(Mesh *mesh, int i, int j);

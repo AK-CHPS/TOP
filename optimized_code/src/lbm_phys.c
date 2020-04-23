@@ -77,13 +77,13 @@ double get_cell_density(const lbm_mesh_cell_t cell)
  * densités microscopiques.
  * @param cell_density Densité macroscopique de la cellules.
 **/
-void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell,double cell_density)
+void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, double cell_density)
 {
 	//vars
 	int k,d;
 
 	//loop on all dimensions
-	for ( d = 0 ; d < DIMENSIONS ; d++)
+	for (d = 0 ; d < DIMENSIONS ; d++)
 	{
 		//reset value
 		v[d] = 0.0;
@@ -150,7 +150,8 @@ void compute_cell_collision(lbm_mesh_cell_t cell_out,const lbm_mesh_cell_t cell_
 	{
 		//compute f at equilibr.
 		feq = compute_equilibrium_profile(v,density,k);
-		//compute fout
+
+		//compute f out
 		cell_out[k] = cell_in[k] - RELAX_PARAMETER * (cell_in[k] - feq);
 	}
 }
@@ -175,7 +176,7 @@ void compute_bounce_back(lbm_mesh_cell_t cell)
  * @param i Position pour laquelle on cherche la vitesse.
  * @param size diamètre du tube.
 **/
-double helper_compute_poiseuille(int i,int size)
+double helper_compute_poiseuille(int i, int size)
 {
 	double y = (double)(i - 1);
 	double L = (double)(size - 1);
@@ -211,11 +212,9 @@ void compute_inflow_zou_he_poiseuille_distr( const Mesh *mesh, lbm_mesh_cell_t c
 
 	//now compute unknown microscopic values
 	double a = 0.166667 * (density * v);
-	cell[1] = cell[3];// + (2.0/3.0) * density * v_y <--- no velocity on Y so v_y = 0
+	cell[1] = cell[3];
 	cell[5] = cell[7] - 0.5 * (cell[2] - cell[4]) + a;
-	                       //+ (1.0/2.0) * density * v_y    <--- no velocity on Y so v_y = 0
 	cell[8] = cell[6] + 0.5 * (cell[2] - cell[4]) + a;
-	                       //- (1.0/2.0) * density * v_y    <--- no velocity on Y so v_y = 0
 
 	//no need to copy already known one as the value will be "loss" in the wall at propagatation time
 }
@@ -283,14 +282,12 @@ void collision(Mesh * mesh_out,const Mesh * mesh_in)
 {
 	//vars
 	int i,j;
-
-	//errors
-	assert(mesh_in->width == mesh_out->width);
-	assert(mesh_in->height == mesh_out->height);
-
-	for( i = 1 ; i < mesh_in->width - 1 ; i++ )
-		for( j = 1 ; j < mesh_in->height - 1 ; j++)
+	
+	for( i = 1 ; i < mesh_in->width - 1 ; i++ ){
+		for( j = 1 ; j < mesh_in->height - 1 ; j++){
 			compute_cell_collision(Mesh_get_cell(mesh_out, i, j),Mesh_get_cell(mesh_in, i, j));
+		}
+	}
 }
 
 /*******************  FUNCTION  *********************/
@@ -306,13 +303,15 @@ void propagation(Mesh * mesh_out,const Mesh * mesh_in)
 	int ii,jj;
 
 	for ( i = 0 ; i < mesh_out->width; i++){
-		for ( j = 0 ; j < mesh_out->height ; j++){
+		for ( j = 1 ; j < mesh_out->height-1 ; j++){
 			for ( k  = 0 ; k < DIRECTIONS ; k++){
 				ii = (i + direction_matrix[k][0]);
 				jj = (j + direction_matrix[k][1]);
+
 				//propagate to neighboor nodes
-				if ((ii >= 0 && ii < mesh_out->width) && (jj >= 0 && jj < mesh_out->height))
+				if ((ii >= 0 && ii < mesh_out->width) && (jj >= 0 && jj < mesh_out->height)){
 					Mesh_get_cell(mesh_out, ii, jj)[k] = Mesh_get_cell(mesh_in, i, j)[k];
+				}
 			}
 		}
 	}

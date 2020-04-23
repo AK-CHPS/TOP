@@ -44,18 +44,23 @@ typedef struct lbm_comm_t_s
 	int height;
 	int nb_x;
 	int nb_y;
+	/** id du noeuds **/
+	int id;
 	/** Id du voisin de droite, -1 si aucun. **/
 	int right_id;
 	/** Id du voisin de gauche, -1 si aucun. **/
 	int left_id;
+	/** Id du voisin de droite, -1 si aucun. **/
 	int top_id;
+	/** Id du voisin de gauche, -1 si aucun. **/
 	int bottom_id;
-	int corner_id[4];
 	/** Requète asynchrone en cours. **/
-	int request_cpt;
 	MPI_Request requests[32];
-	lbm_mesh_cell_t buffer;
+	MPI_Request request_cpt;
 } lbm_comm_t;
+
+/*******************  FUNCTION  *********************/
+void save_frame(MPI_File * fp,const Mesh * mesh, const int rank, const int size);
 
 /*******************  FUNCTION  *********************/
 static inline int lbm_comm_width( lbm_comm_t *mc )
@@ -75,10 +80,7 @@ void lbm_comm_release( lbm_comm_t * mesh );
 void  lbm_comm_print( lbm_comm_t *mesh );
 
 /*******************  FUNCTION  *********************/
-void lbm_comm_sync_ghosts_wait( lbm_comm_t * mesh );
+void lbm_comm_sync_ghosts_wait( lbm_comm_t * mesh, Mesh *mesh_to_process);
 void lbm_comm_ghost_exchange(lbm_comm_t * mesh, Mesh *mesh_to_process );
-
-/*******************  FUNCTION  *********************/
-void save_frame_all_domain( FILE * fp, Mesh *source_mesh, Mesh *temp );
 
 #endif
