@@ -78,9 +78,7 @@ void save_frame(MPI_File * fp,const Mesh * mesh, const int rank, const int size)
   double density, norm;
   Vector v;
 
-  offset = sizeof(lbm_file_header_t) + (it * size + rank) * ((mesh->width-2) * (mesh->height-2) * sizeof(lbm_file_entry_t));
-
-  it += 1;
+  offset = sizeof(lbm_file_header_t) + (it++ * size + rank) * ((mesh->width-2) * (mesh->height-2) * sizeof(lbm_file_entry_t));
 
   //loop on all values
   cnt = 0;
@@ -117,8 +115,6 @@ int main(int argc, char * argv[])
   //vars
   Mesh mesh;
   Mesh temp;
-  Mesh temp_render;
-  lbm_mesh_type_t mesh_type;
   lbm_comm_t mesh_comm;
   int i, rank, comm_size;
   MPI_File fp;
@@ -146,31 +142,26 @@ int main(int argc, char * argv[])
   lbm_comm_init( &mesh_comm, rank, comm_size, MESH_WIDTH, MESH_HEIGHT);
   Mesh_init( &mesh, lbm_comm_width( &mesh_comm ), lbm_comm_height( &mesh_comm ) );
   Mesh_init( &temp, lbm_comm_width( &mesh_comm ), lbm_comm_height( &mesh_comm ) );
-  Mesh_init( &temp_render, lbm_comm_width( &mesh_comm ), lbm_comm_height( &mesh_comm ) );
-  lbm_mesh_type_t_init( &mesh_type, lbm_comm_width( &mesh_comm ), lbm_comm_height( &mesh_comm ));
-
+ 
   // ouverture du fichier
   open_output_file(&mesh_comm, rank, &fp);
 
   //setup initial conditions on mesh
-  setup_init_state( &mesh, &mesh_type, &mesh_comm);
-  setup_init_state( &temp, &mesh_type, &mesh_comm);
+  setup_init_state( &mesh, &mesh_comm);
+  setup_init_state( &temp, &mesh_comm);
 
   //write initial condition in output file
   if (lbm_gbl_config.output_filename != NULL)
     save_frame(&fp, &temp, rank, comm_size);
 
-  //barrier to wait all before start
-  MPI_Barrier(MPI_COMM_WORLD);
-
   //time steps
-  for ( i = 1 ; i < ITERATIONS ; i++ ){
+  for (i = 1 ; i < ITERATIONS ; i++ ){
 
     if((rank == RANK_MASTER) && (i%500 == 0))
 	     printf("Progress [%5d / %5d]\n",i,ITERATIONS-1);
 
     //compute special actions (border, obstacle...)
-    special_cells( &mesh, &mesh_type, &mesh_comm);
+    special_cells( &mesh, &mesh_comm);
 
     lbm_comm_ghost_exchange( &mesh_comm, &temp);
 
@@ -194,8 +185,6 @@ int main(int argc, char * argv[])
   lbm_comm_release( &mesh_comm );
   Mesh_release( &mesh );
   Mesh_release( &temp );
-  Mesh_release( &temp_render );
-  lbm_mesh_type_t_release( &mesh_type );
 
   //close MPI
   MPI_Finalize();

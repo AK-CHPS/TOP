@@ -18,14 +18,17 @@ void Mesh_init( Mesh * mesh, int width,  int height )
   //alloc cells memory
   mesh->cells = malloc( width * height  * DIRECTIONS * sizeof( double ) );
 
-  //tableau de cellules speciales
-  mesh->spec_tab = malloc((width*2 + height*2) * 2 * sizeof(int));
+  mesh->left_in_cells = malloc(sizeof(lbm_mesh_cell_t) * height);
+  mesh->right_out_cells = malloc(sizeof(lbm_mesh_cell_t) * height);
+  mesh->bounce_cells = malloc(sizeof(lbm_mesh_cell_t) * width * 2);
 
-  //nombre de cellule speciale
-  mesh->spec_cpt = 0;
+  mesh->left_in_cpt = 0;
+  mesh->right_out_cpt = 0;
+  mesh->bounce_cpt = 0;
 
-  //taille du tableau de cellule speciale
-  mesh->spec_size = (width*2 + height*2);
+  mesh->left_in_size = height;
+  mesh->right_out_size = height;
+  mesh->bounce_size = width * 2;
 
   //errors
   if( mesh->cells == NULL )
@@ -43,48 +46,22 @@ void Mesh_release( Mesh *mesh )
   mesh->width = 0;
   mesh->height = 0;
 
+  free(mesh->left_in_cells);
+  free(mesh->right_out_cells);
+  free(mesh->bounce_cells);
+
+  mesh->left_in_cpt = 0;
+  mesh->right_out_cpt = 0;
+  mesh->bounce_cpt = 0;
+
+  mesh->left_in_size = 0;
+  mesh->right_out_size = 0;
+  mesh->bounce_size = 0;
+
   //free memory
   free( mesh->cells);
-  free( mesh->spec_tab);
 
   mesh->cells = NULL;
-}
-
-/*******************  FUNCTION  *********************/
-/**
- * Fonction d'initialisation du maillage local.
- * @param mesh Maillage à initialiser.
- * @param width Taille du maillage, mailles fantomes comprises.
- * @param height Taille du maillage, mailles fantomes comprises.
- **/
-void lbm_mesh_type_t_init( lbm_mesh_type_t * meshtype, int width,  int height )
-{
-  //setup params
-  meshtype->width = width;
-  meshtype->height = height;
-
-  //alloc cells memory
-  meshtype->types = malloc( width * height * sizeof( lbm_cell_type_t ) );
-
-  //errors
-  if( meshtype->types == NULL )
-    {
-      perror( "malloc" );
-      abort();
-    }
-}
-
-/*******************  FUNCTION  *********************/
-/** Libère la mémoire d'un maillage. **/
-void lbm_mesh_type_t_release( lbm_mesh_type_t * mesh )
-{
-  //reset values
-  mesh->width = 0;
-  mesh->height = 0;
-
-  //free memory
-  free( mesh->types );
-  mesh->types = NULL;
 }
 
 /*******************  FUNCTION  *********************/
@@ -95,15 +72,35 @@ void fatal(const char * message)
 }
 
 /*******************  FUNCTION  *********************/
-void add_spec_cell(Mesh *mesh, int i, int j)
+void add_left_in_cell(Mesh* mesh, lbm_mesh_cell_t node)
 {
-  if(mesh->spec_cpt < mesh->spec_size){
-    mesh->spec_tab[mesh->spec_cpt * 2] = i;
-    mesh->spec_tab[mesh->spec_cpt * 2 + 1] = j;
-    mesh->spec_cpt++;
+  if(mesh->left_in_cpt < mesh->left_in_size){
+    mesh->left_in_cells[mesh->left_in_cpt++] = node;
   }else{
-    mesh->spec_tab = realloc(mesh->spec_tab, mesh->spec_size*2*2*sizeof(int));
-    mesh->spec_size *= 2;
-    add_spec_cell(mesh, i, j);
+    mesh->left_in_size *= 2;
+    mesh->left_in_cells = realloc(mesh->left_in_cells, mesh->left_in_size * sizeof(lbm_mesh_cell_t));
+    mesh->left_in_cells[mesh->left_in_cpt++] = node;
+  }
+}
+
+void add_right_out_cell(Mesh* mesh, lbm_mesh_cell_t node)
+{
+  if(mesh->right_out_cpt < mesh->right_out_size){
+    mesh->right_out_cells[mesh->right_out_cpt++] = node;
+  }else{
+    mesh->right_out_size *= 2;
+    mesh->right_out_cells = realloc(mesh->right_out_cells, mesh->right_out_size * sizeof(lbm_mesh_cell_t));
+    mesh->right_out_cells[mesh->right_out_cpt++] = node;
+  }
+}
+
+void add_bounce_cell(Mesh* mesh, lbm_mesh_cell_t node)
+{
+  if(mesh->bounce_cpt < mesh->bounce_size){
+    mesh->bounce_cells[mesh->bounce_cpt++] = node;
+  }else{
+    mesh->bounce_size *= 2;
+    mesh->bounce_cells = realloc(mesh->bounce_cells, mesh->bounce_size * sizeof(lbm_mesh_cell_t));
+    mesh->bounce_cells[mesh->bounce_cpt++] = node;
   }
 }

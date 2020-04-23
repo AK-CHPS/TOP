@@ -28,12 +28,24 @@ typedef struct Mesh
 	int width;
 	/** Largeur du maillage local (mailles fantome comprises). **/
 	int height;
-	/** Tableau de cellule speciales */
-	int *spec_tab;
-	/** Compteur de cellule speciales */
-	int spec_cpt;
-	/** Taille du tableau de cellule speciales */
-	int spec_size;
+	/** Cellules d'entrées **/
+	lbm_mesh_cell_t* left_in_cells;
+	/** Cellules de sorties **/
+	lbm_mesh_cell_t* right_out_cells;
+	/** Balles rebondissantes **/
+	lbm_mesh_cell_t* bounce_cells;
+	/** Nombre de cellules d'entrées */
+	int left_in_size;
+	/** Nombre de cellules de sorties */
+	int right_out_size;
+	/** Nombre de balles reboncdissantes */
+	int bounce_size;
+	/** Compteur de cellules d'entrées */
+	int left_in_cpt;
+	/** Compteur de cellules de sorties */
+	int right_out_cpt;
+	/** Compteur de balles reboncdissantes */
+	int bounce_cpt;
 } Mesh;
 
 /*********************  ENUM  ***********************/
@@ -52,20 +64,6 @@ typedef enum lbm_cell_type_e
 	/** Cellule de la paroie de sortie. Application de Zou/He avec gradiant de densité constant. **/
 	CELL_RIGHT_OUT
 } lbm_cell_type_t;
-
-/********************  STRUCT  **********************/
-/**
- * Tableau maitnenant les informations de type pour les cellules.
-**/
-typedef struct lbm_mesh_type_s
-{
-	/** Type des cellules du maillages (MESH_WIDTH * MESH_HEIGHT). **/
-	lbm_cell_type_t * types;
-	/** Largeur du maillage local (mailles fantome comprises). **/
-	int width;
-	/** Largeur du maillage local (mailles fantome comprises). **/
-	int height;
-} lbm_mesh_type_t;
 
 /********************  STRUCT  **********************/
 /** Structure des en-têtes utilisée dans le fichier de sortie. **/
@@ -102,17 +100,22 @@ void Mesh_init( Mesh * mesh, int width,  int height );
 void Mesh_release( Mesh * mesh );
 
 /*******************  FUNCTION  *********************/
-void lbm_mesh_type_t_init( lbm_mesh_type_t * mesh, int width,  int height );
-void lbm_mesh_type_t_release( lbm_mesh_type_t * mesh );
+void fatal(const char * message);
 
 /*******************  FUNCTION  *********************/
-void fatal(const char * message);
+void add_left_in_cell(Mesh* mesh, lbm_mesh_cell_t node);
+
 /*******************  FUNCTION  *********************/
-void add_spec_cell(Mesh *mesh, int i, int j);
+void add_right_out_cell(Mesh* mesh, lbm_mesh_cell_t node);
+
+/*******************  FUNCTION  *********************/
+void add_bounce_cell(Mesh* mesh, lbm_mesh_cell_t node);
+
 /*******************  FUNCTION  *********************/
 /**
  * Fonction à utiliser pour récupérer une cellule du maillage en fonction de ses coordonnées.
 **/
+
 static inline lbm_mesh_cell_t Mesh_get_cell( const Mesh *mesh, int x, int y)
 {
 	return &mesh->cells[ (x * mesh->height + y) * DIRECTIONS ];
@@ -131,10 +134,11 @@ static inline lbm_mesh_cell_t Mesh_get_col( const Mesh * mesh, int x )
 /*******************  FUNCTION  *********************/
 /**
  * Fonction à utiliser pour récupérer un pointeur sur le type d'une cellule du maillage en fonction de ses coordonnées.
-**/
+
 static inline lbm_cell_type_t * lbm_cell_type_t_get_cell( const lbm_mesh_type_t * meshtype, int x, int y)
 {
 	return &meshtype->types[ x * meshtype->height + y];
 }
+*/
 
 #endif //LBM_STRUCT_H

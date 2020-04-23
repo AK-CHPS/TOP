@@ -30,7 +30,7 @@ void compute_outflow_zou_he_const_density(lbm_mesh_cell_t mesh);
 
 /*******************  FUNCTION  *********************/
 //main functions
-void special_cells(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm_comm_t * mesh_comm);
+void special_cells(Mesh * mesh, const lbm_comm_t * mesh_comm);
 void collision(Mesh * mesh_out,const Mesh * mesh_in);
 void propagation(Mesh * mesh_out,const Mesh * mesh_in);
 

@@ -20,6 +20,14 @@ const Vector direction_matrix[DIRECTIONS] = {
 #error Need to defined adapted direction matrix.
 #endif
 
+const Vector right_direction_matrix[5] = {
+	{+1.0,+0.0}, {+0.0,+1.0}, {+0.0,-1.0}, {+1.0,+1.0}, {+1.0,-1.0}
+};
+
+const Vector left_direction_matrix[5] = {
+	{+0.0,+1.0}, {-1.0,+0.0}, {+0.0,-1.0}, {-1.0,+1.0}, {-1.0,-1.0}
+};
+
 /********************** CONSTS **********************/
 /**
  * Poids utilisé pour compenser les différentes de longueur des 9 vecteurs directions.
@@ -77,7 +85,7 @@ double get_cell_density(const lbm_mesh_cell_t cell)
  * densités microscopiques.
  * @param cell_density Densité macroscopique de la cellules.
 **/
-void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, double cell_density)
+void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, const  double cell_density)
 {
 	//vars
 	int k,d;
@@ -105,7 +113,7 @@ void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, double cell_density)
  * @param density Densité macroscopique du fluide sur la maille.
  * @param direction Direction pour laquelle calculer l'état d'équilibre.
 **/
-double compute_equilibrium_profile(Vector velocity,double density,int direction)
+double compute_equilibrium_profile(Vector velocity,const double density, const int direction)
 {
 	//vars
 	double v2;
@@ -176,7 +184,7 @@ void compute_bounce_back(lbm_mesh_cell_t cell)
  * @param i Position pour laquelle on cherche la vitesse.
  * @param size diamètre du tube.
 **/
-double helper_compute_poiseuille(int i, int size)
+double helper_compute_poiseuille(const int i, const int size)
 {
 	double y = (double)(i - 1);
 	double L = (double)(size - 1);
@@ -252,24 +260,19 @@ void compute_outflow_zou_he_const_density(lbm_mesh_cell_t cell)
 /**
  * Applique les actions spéciales liées aux conditions de bords ou aux réflexions sur l'obstacle.
 **/
-void special_cells(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm_comm_t * mesh_comm)
+void special_cells(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
-	for(int i = 0; i < mesh->spec_size; i++){
-		switch (*( lbm_cell_type_t_get_cell( mesh_type , mesh->spec_tab[i*2], mesh->spec_tab[i*2+1]) ))
-		{
-			case CELL_BOUNCE_BACK:
-				compute_bounce_back(Mesh_get_cell(mesh, mesh->spec_tab[i*2], mesh->spec_tab[i*2+1]));
-				break;
-			case CELL_LEFT_IN:
-				compute_inflow_zou_he_poiseuille_distr(mesh, Mesh_get_cell(mesh, mesh->spec_tab[i*2], mesh->spec_tab[i*2+1]) ,mesh->spec_tab[i*2+1] + mesh_comm->y);
-				break;
-			case CELL_RIGHT_OUT:
-				compute_outflow_zou_he_const_density(Mesh_get_cell(mesh, mesh->spec_tab[i*2], mesh->spec_tab[i*2+1]));
-				break;
-			default:
-				fprintf(stderr, "Erreur type\n");
-				break;
-		}
+	
+	for(int i = 0; i < mesh->left_in_cpt; i++){
+		compute_inflow_zou_he_poiseuille_distr(mesh, mesh->left_in_cells[i], i);		
+	}
+	
+	for(int i = 0; i < mesh->right_out_cpt; i++){
+		compute_outflow_zou_he_const_density(mesh->right_out_cells[i]);
+	}
+
+	for(int i = 0; i < mesh->bounce_cpt; i++){
+		compute_bounce_back(mesh->bounce_cells[i]);
 	}
 }
 
@@ -302,12 +305,12 @@ void propagation(Mesh * mesh_out,const Mesh * mesh_in)
 	int i,j,k;
 	int ii,jj;
 
-	for ( i = 0 ; i < mesh_out->width; i++){
+	for (i = 0 ; i < mesh_out->width; i++){
 		for ( j = 1 ; j < mesh_out->height-1 ; j++){
 			for ( k  = 0 ; k < DIRECTIONS ; k++){
 				ii = (i + direction_matrix[k][0]);
 				jj = (j + direction_matrix[k][1]);
-
+				
 				//propagate to neighboor nodes
 				if ((ii >= 0 && ii < mesh_out->width) && (jj >= 0 && jj < mesh_out->height)){
 					Mesh_get_cell(mesh_out, ii, jj)[k] = Mesh_get_cell(mesh_in, i, j)[k];

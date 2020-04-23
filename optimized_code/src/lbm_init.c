@@ -11,7 +11,7 @@
  * Initialisation de l'obstacle, on bascule les types des mailles associés à CELL_BOUNCE_BACK.
  * Ici l'obstacle est un cercle de centre (OBSTACLE_X,OBSTACLE_Y) et de rayon OBSTACLE_R.
  **/
-void setup_init_state_circle_obstacle(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm_comm_t * mesh_comm)
+void setup_init_state_circle_obstacle(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
   //vars
   int i,j;
@@ -19,8 +19,7 @@ void setup_init_state_circle_obstacle(Mesh * mesh, lbm_mesh_type_t * mesh_type, 
   for(j =  mesh_comm->y ; j <  mesh->height + mesh_comm->y ; j++){
     for(i =  mesh_comm->x; i < mesh->width + mesh_comm->x ; i++){
       if ( ((i-OBSTACLE_X) * (i-OBSTACLE_X)) + ((j-OBSTACLE_Y) * (j-OBSTACLE_Y)) <= (OBSTACLE_R * OBSTACLE_R)){
-        *( lbm_cell_type_t_get_cell( mesh_type , i - mesh_comm->x, j - mesh_comm->y) ) = CELL_BOUNCE_BACK;
-        add_spec_cell(mesh, i - mesh_comm->x, j - mesh_comm->y);
+        add_bounce_cell(mesh, Mesh_get_cell( mesh, i - mesh_comm->x, j - mesh_comm->y));
       }
     }
   }
@@ -33,7 +32,7 @@ void setup_init_state_circle_obstacle(Mesh * mesh, lbm_mesh_type_t * mesh_type, 
  * @param mesh Le maillage à initialiser.
  * @param mesh_type La grille d'information notifiant le type des mailles.
  **/
-void setup_init_state_global_poiseuille_profile(Mesh * mesh, lbm_mesh_type_t * mesh_type,const lbm_comm_t * mesh_comm)
+void setup_init_state_global_poiseuille_profile(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
   //vars
   int i,j,k;
@@ -42,7 +41,6 @@ void setup_init_state_global_poiseuille_profile(Mesh * mesh, lbm_mesh_type_t * m
 
   for ( j = 0 ; j < mesh->height ; j++){
     for ( i = 0 ; i < mesh->width ; i++){
-      *( lbm_cell_type_t_get_cell( mesh_type , i, j) ) = CELL_FUILD;
       for ( k = 0 ; k < DIRECTIONS ; k++){
           if (i != 0){
             Mesh_get_cell(mesh, i, j)[k] = equil_weight[k];
@@ -61,7 +59,7 @@ void setup_init_state_global_poiseuille_profile(Mesh * mesh, lbm_mesh_type_t * m
  * @param mesh Le maillage à initialiser.
  * @param mesh_type La grille d'information notifiant le type des mailles.
  **/
-void setup_init_state_border(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm_comm_t * mesh_comm)
+void setup_init_state_border(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
   //vars
   int i,j,k;
@@ -70,12 +68,10 @@ void setup_init_state_border(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm
 
   for(j = 0; j < mesh->height; j++){
     if(mesh_comm->left_id == -1){
-      *( lbm_cell_type_t_get_cell( mesh_type , 0, j) ) = CELL_LEFT_IN;
-      add_spec_cell(mesh, 0, j);
+      add_left_in_cell(mesh, Mesh_get_cell( mesh, 0, j));
     }
     if(mesh_comm->right_id == -1){
-      *( lbm_cell_type_t_get_cell( mesh_type , mesh->width - 1, j) ) = CELL_RIGHT_OUT;    
-      add_spec_cell(mesh, mesh->width - 1, j);
+      add_right_out_cell(mesh, Mesh_get_cell( mesh, mesh->width - 1, j));
     }
   }
 
@@ -83,14 +79,12 @@ void setup_init_state_border(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm
     if(mesh_comm->top_id == -1){
       for(k = 0 ; k < DIRECTIONS ; k++)
         Mesh_get_cell(mesh, i, 0)[k] = compute_equilibrium_profile(v,density,k);
-      *( lbm_cell_type_t_get_cell( mesh_type , i, 0) ) = CELL_BOUNCE_BACK;
-      add_spec_cell(mesh, i, 0);
+      add_bounce_cell(mesh, Mesh_get_cell( mesh, i, 0));
     }
     if(mesh_comm->bottom_id == -1){
       for(k = 0 ; k < DIRECTIONS ; k++)
         Mesh_get_cell(mesh, i, mesh->height - 1)[k] = compute_equilibrium_profile(v,density,k);
-      *( lbm_cell_type_t_get_cell( mesh_type , i, mesh->height - 1) ) = CELL_BOUNCE_BACK;
-      add_spec_cell(mesh, i, mesh->height - 1);
+      add_bounce_cell(mesh, Mesh_get_cell( mesh, i, mesh->height - 1));
     }
   }
 }
@@ -102,9 +96,9 @@ void setup_init_state_border(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm
  * @param mesh_type La grille d'information notifiant le type des mailles.
  * @param mesh_comm La structure de communication pour connaitre notre position absolue dans le maillage globale.
  **/
-void setup_init_state(Mesh * mesh, lbm_mesh_type_t * mesh_type, const lbm_comm_t * mesh_comm)
+void setup_init_state(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
-  setup_init_state_global_poiseuille_profile(mesh,mesh_type,mesh_comm);
-  setup_init_state_border(mesh,mesh_type,mesh_comm);
-  setup_init_state_circle_obstacle(mesh,mesh_type, mesh_comm);
+  setup_init_state_global_poiseuille_profile(mesh, mesh_comm);
+  setup_init_state_border(mesh, mesh_comm);
+  setup_init_state_circle_obstacle(mesh, mesh_comm);
 }
