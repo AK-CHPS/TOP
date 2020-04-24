@@ -42,12 +42,8 @@ void setup_init_state_global_poiseuille_profile(Mesh * mesh, const lbm_comm_t * 
   for ( j = 0 ; j < mesh->height ; j++){
     for ( i = 0 ; i < mesh->width ; i++){
       for ( k = 0 ; k < DIRECTIONS ; k++){
-          if (i != 0){
-            Mesh_get_cell(mesh, i, j)[k] = equil_weight[k];
-          }else{
-            v[0] = helper_compute_poiseuille(j + mesh_comm->y,MESH_HEIGHT);
-            Mesh_get_cell(mesh, i, j)[k] = compute_equilibrium_profile(v,density,k);  
-          }
+          v[0] = helper_compute_poiseuille(j + mesh_comm->y,MESH_HEIGHT);
+            Mesh_get_cell(mesh, i, j)[k] = compute_equilibrium_profile(v,density,k); 
       } 
     }
   }

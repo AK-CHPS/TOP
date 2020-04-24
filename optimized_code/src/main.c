@@ -155,8 +155,7 @@ int main(int argc, char * argv[])
     save_frame(&fp, &temp, rank, comm_size);
 
   //time steps
-  for (i = 1 ; i < ITERATIONS ; i++ ){
-
+  for (i = 1 ; i < ITERATIONS; i++){
     if((rank == RANK_MASTER) && (i%500 == 0))
 	     printf("Progress [%5d / %5d]\n",i,ITERATIONS-1);
 

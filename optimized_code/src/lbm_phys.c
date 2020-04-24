@@ -55,7 +55,7 @@ double get_vect_norme_2(const Vector vect1,const Vector vect2)
 	double res = 0.0;
 
 	//loop on dimensions
-	for ( k = 0 ; k < DIMENSIONS ; k++)
+	for (k = 0; k < DIMENSIONS; k++)
 		res += vect1[k] * vect2[k];
 
 	return res;
@@ -262,7 +262,6 @@ void compute_outflow_zou_he_const_density(lbm_mesh_cell_t cell)
 **/
 void special_cells(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
-	
 	for(int i = 0; i < mesh->left_in_cpt; i++){
 		compute_inflow_zou_he_poiseuille_distr(mesh, mesh->left_in_cells[i], i);		
 	}
