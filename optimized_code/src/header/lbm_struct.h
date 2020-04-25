@@ -46,24 +46,9 @@ typedef struct Mesh
 	int right_out_cpt;
 	/** Compteur de balles reboncdissantes */
 	int bounce_cpt;
+	/** tableau des valeurs de poiseuille pre calculees **/
+	double *poiseuille;
 } Mesh;
-
-/*********************  ENUM  ***********************/
-/**
- * Definition des différents type de cellule pour savoir quel traitement y appliquer
- * lors du calcul.
-**/
-typedef enum lbm_cell_type_e
-{
-	/** Cellule de fluide standard, uniquement application des collisions. **/
-	CELL_FUILD,
-	/** Cellules de l'obstacle ou des bordure supérieures et inférieurs. Application de réflexion. **/
-	CELL_BOUNCE_BACK,
-	/** Cellule de la paroie d'entrée. Application de Zou/He avec V fixé. **/
-	CELL_LEFT_IN,
-	/** Cellule de la paroie de sortie. Application de Zou/He avec gradiant de densité constant. **/
-	CELL_RIGHT_OUT
-} lbm_cell_type_t;
 
 /********************  STRUCT  **********************/
 /** Structure des en-têtes utilisée dans le fichier de sortie. **/
@@ -115,11 +100,11 @@ void add_bounce_cell(Mesh* mesh, lbm_mesh_cell_t node);
 /**
  * Fonction à utiliser pour récupérer une cellule du maillage en fonction de ses coordonnées.
 **/
-
 static inline lbm_mesh_cell_t Mesh_get_cell( const Mesh *mesh, int x, int y)
 {
 	return &mesh->cells[ (x * mesh->height + y) * DIRECTIONS ];
 }
+
 
 /*******************  FUNCTION  *********************/
 /**
@@ -127,18 +112,7 @@ static inline lbm_mesh_cell_t Mesh_get_cell( const Mesh *mesh, int x, int y)
 **/
 static inline lbm_mesh_cell_t Mesh_get_col( const Mesh * mesh, int x )
 {
-	//+DIRECTIONS to skip the first (ghost) line
 	return &mesh->cells[ x * mesh->height * DIRECTIONS + DIRECTIONS];
 }
-
-/*******************  FUNCTION  *********************/
-/**
- * Fonction à utiliser pour récupérer un pointeur sur le type d'une cellule du maillage en fonction de ses coordonnées.
-
-static inline lbm_cell_type_t * lbm_cell_type_t_get_cell( const lbm_mesh_type_t * meshtype, int x, int y)
-{
-	return &meshtype->types[ x * meshtype->height + y];
-}
-*/
 
 #endif //LBM_STRUCT_H

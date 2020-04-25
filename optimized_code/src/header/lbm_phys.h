@@ -10,12 +10,9 @@ const int opposite_of[DIRECTIONS];
 const double equil_weight[DIRECTIONS];
 const Vector direction_matrix[DIRECTIONS];
 
-/*******************  FUNCTION  *********************/
-//helper
 double get_vect_norme_2(const Vector vect1,const Vector vect2);
 double get_cell_density(const lbm_mesh_cell_t cell);
 void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, double cell_density);
-double helper_compute_poiseuille(int i,int size);
 
 /*******************  FUNCTION  *********************/
 //collistion

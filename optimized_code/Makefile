@@ -5,9 +5,9 @@ RM=rm -f
 MAKEDEPEND=makedepend
 
 #flags
-CFLAGS=-Wall -g
-LDFLAGS=-lm
-OFLAGS=-O3
+CFLAGS=-Wall -g 
+LDFLAGS=-lm -fopenmp
+OFLAGS=-O3 -ffast-math
 
 #Files
 SRC_DIR=./src

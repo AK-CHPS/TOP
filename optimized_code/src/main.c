@@ -25,9 +25,6 @@ void write_file_header(MPI_File fp,lbm_comm_t * mesh_comm)
   header.mesh_height = MESH_HEIGHT;
   header.mesh_width  = MESH_WIDTH;
   header.lines       = mesh_comm->nb_y;
-
-  //write file
-  //fwrite(&header,sizeof(header),1,fp);
   
   MPI_File_write(fp, &header, sizeof(lbm_file_header_t), MPI_BYTE, MPI_STATUS_IGNORE);
 }
@@ -59,7 +56,6 @@ void close_file(MPI_File* fp){
   MPI_File_close(fp);
 }
 
-
 /*******************  FUNCTION  *********************/
 /**
  * Sauvegarde le résultat d'une étape de calcul. Cette fonction peu être appelée plusieurs fois
@@ -89,7 +85,7 @@ void save_frame(MPI_File * fp,const Mesh * mesh, const int rank, const int size)
       //compute macrospic values
       density = get_cell_density(Mesh_get_cell(mesh, i, j));
       get_cell_velocity(v,Mesh_get_cell(mesh, i, j),density);
-      norm = sqrt(get_vect_norme_2(v,v));
+      norm = __builtin_sqrt(get_vect_norme_2(v,v));
 
       //fill buffer
       buffer[cnt].density = density;
