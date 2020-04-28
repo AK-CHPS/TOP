@@ -155,7 +155,7 @@ void compute_cell_collision(lbm_mesh_cell_t cell_out,const lbm_mesh_cell_t cell_
 	int k;
 	double density;
 	Vector v;
-	double feq;
+	double feq[DIRECTIONS];
 
 	//compute macroscopic values
 	density = get_cell_density(cell_in);
@@ -165,10 +165,12 @@ void compute_cell_collision(lbm_mesh_cell_t cell_out,const lbm_mesh_cell_t cell_
 	for( k = 0 ; k < DIRECTIONS ; k++)
 	{
 		//compute f at equilibr.
-		feq = compute_equilibrium_profile(v,density,k);
+		feq[k] = compute_equilibrium_profile(v,density,k);
+    }
 
+    for( k = 0 ; k < DIRECTIONS ; k++){
 		//compute f out
-		cell_out[k] = cell_in[k] - RELAX_PARAMETER * (cell_in[k] - feq);
+		cell_out[k] = cell_in[k] - RELAX_PARAMETER * (cell_in[k] - feq[k]);
 	} 
 }
 
@@ -299,7 +301,7 @@ void collision(Mesh * mesh_out,const Mesh * mesh_in)
 void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 {
 	//vars
-	int i,j,k,z;
+	int i, j, k, z, x, y;
 	int ii,jj;
     int width = mesh_out->width;
     int height = mesh_out->height;
@@ -309,17 +311,48 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
     for(j = 0; j < height-1; j++){
 		// left mesh cells
 		i = 0;
-        for(z = 0; z < 6; z++){
-            k = right_direction_matrix[z];
+	    for(z = 0; z < 6; z++){
+	        k = right_direction_matrix[z];
 
-            ii = (i + int_direction_matrix[k][0]);
-			jj = (j + int_direction_matrix[k][1]);
+	        ii = (i - int_direction_matrix[k][0]);
+			jj = (j - int_direction_matrix[k][1]);
 
-            cells_out[(ii * height + jj)*DIRECTIONS + k] = cells_in[(i * height + j)*DIRECTIONS + k];
-        }
+		    cells_out[(i * height + j)*DIRECTIONS + k] = cells_in[(ii * height + jj)*DIRECTIONS + k];
+	    }
 	} 
 
+	for(j = 0; j < height-1; j++){
+		// right mesh cells
+		i = mesh_out->width-1;
+	    for(z = 0; z < 6; z++){
+		        k = left_direction_matrix[z];
+
+		        ii = (i - int_direction_matrix[k][0]);
+				jj = (j - int_direction_matrix[k][1]);
+	
+	            cells_out[(i * height + j)*DIRECTIONS + k] = cells_in[(ii * height + jj)*DIRECTIONS + k];
+	    }
+	}  
+
 	#pragma omp paralell for num_threads(2) scheduling(guided)
+	for (i = 1; i < width-1; i++){
+		for ( j = 1 ; j < height-1; j++){
+			for( x = 0; x < 2 && (i+x) < (width-1); x++){
+				for( y = 0; y < 4 && (j+y) < (height-1); y++){
+					for ( k  = 0 ; k < DIRECTIONS ; k++){
+						ii = ((i+x) - int_direction_matrix[k][0]);
+						jj = ((j+y) - int_direction_matrix[k][1]);
+
+						cells_out[((i+x) * height + (j+y))*DIRECTIONS + k] = cells_in[(ii * height + jj)*DIRECTIONS + k];
+					}
+				}
+			}
+		}
+	}
+
+
+	/*
+	//#pragma omp paralell for num_threads(2) scheduling(guided)
 	for (i = 1; i < width-1; i++){
 		for ( j = 1 ; j < height-1 ; j++){
 			for ( k  = 0 ; k < DIRECTIONS ; k++){
@@ -330,17 +363,5 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 			}
 		}
 	}
-
-    for(j = 0; j < height-1; j++){
-		// right mesh cells
-		i = mesh_out->width-1;
-        for(z = 0; z < 6; z++){
-            k = left_direction_matrix[z];
-
-            ii = (i + int_direction_matrix[k][0]);
-			jj = (j + int_direction_matrix[k][1]);
-
-            cells_out[(ii * height + jj)*DIRECTIONS + k] = cells_in[(i * height + j)*DIRECTIONS + k];
-        }
-	}
+	*/
 }
