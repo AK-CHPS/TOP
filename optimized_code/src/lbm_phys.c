@@ -189,7 +189,7 @@ void compute_bounce_back(lbm_mesh_cell_t cell)
 	int k;
 
 	//compute bounce back
-	for ( k = 0 ; k < DIRECTIONS ; k++)
+	for ( k = 0; k < DIRECTIONS ; k++)
 		cell[k] = cell[opposite_of[k]];
 }
 
@@ -288,7 +288,7 @@ void collision(Mesh * mesh_out,const Mesh * mesh_in)
 	//vars
 	int i,j;
 	
-	#pragma omp paralell for num_threads(2) scheduling(guided)
+	#pragma omp paralell for num_threads(2) schedule(static, 4)
 	for( i = 1 ; i < mesh_in->width - 1 ; i++ ){
 		for( j = 1 ; j < mesh_in->height - 1 ; j++){
 			compute_cell_collision(Mesh_get_cell(mesh_out, i, j),Mesh_get_cell(mesh_in, i, j));
@@ -339,9 +339,9 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 	    }
 	}  
 
-	#pragma omp paralell for num_threads(2) scheduling(guided)
-	for (i = 1; i < width-1; i++){
-		for ( j = 1 ; j < height-1; j++){
+	#pragma omp paralell for num_threads(2) schedule(static, 4)
+	for (i = 1; i < width-1; i += 2){
+		for ( j = 1 ; j < height-1 ; j += 4){
 			for( x = 0; x < 2 && (i+x) < (width-1); x++){
 				for( y = 0; y < 4 && (j+y) < (height-1); y++){
 					for ( k  = 0 ; k < DIRECTIONS ; k++){
@@ -354,19 +354,4 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 			}
 		}
 	}
-
-
-	/*
-	//#pragma omp paralell for num_threads(2) scheduling(guided)
-	for (i = 1; i < width-1; i++){
-		for ( j = 1 ; j < height-1 ; j++){
-			for ( k  = 0 ; k < DIRECTIONS ; k++){
-				ii = (i + int_direction_matrix[k][0]);
-				jj = (j + int_direction_matrix[k][1]);
-
-				cells_out[(ii * height + jj)*DIRECTIONS + k] = cells_in[(i * height + j)*DIRECTIONS + k];
-			}
-		}
-	}
-	*/
 }
