@@ -91,24 +91,29 @@ double get_cell_density(const lbm_mesh_cell_t cell)
  * Calcule la vitesse macroscopiques de la cellule en sommant ses DIRECTIONS
  * densités microscopiques.
  * @param cell_density Densité macroscopique de la cellules.
+
+https://llvm.org/docs/Atomics.html
+
 **/
 void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, const  double cell_density)
 {
 	//vars
 	int k,d;
+    double temp;
+    double div = 1.0/cell_density;
 
 	//loop on all dimensions
 	for (d = 0 ; d < DIMENSIONS ; d++)
 	{
 		//reset value
-		v[d] = 0.0;
+		temp = 0.0;
 
 		//sum all directions
 		for ( k = 0 ; k < DIRECTIONS ; k++)
-			v[d] += cell[k] * direction_matrix[k][d];
+			temp += cell[k] * direction_matrix[k][d];
 		
 		//normalize
-		v[d] = v[d] / cell_density;
+		v[d] = temp * div;
 	}
 }
 
