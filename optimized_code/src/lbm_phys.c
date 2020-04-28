@@ -288,7 +288,7 @@ void collision(Mesh * mesh_out,const Mesh * mesh_in)
 	//vars
 	int i,j;
 	
-	#pragma omp paralell for num_threads(2) schedule(static, 4)
+	#pragma omp parallel for num_threads(2) schedule(guided)
 	for( i = 1 ; i < mesh_in->width - 1 ; i++ ){
 		for( j = 1 ; j < mesh_in->height - 1 ; j++){
 			compute_cell_collision(Mesh_get_cell(mesh_out, i, j),Mesh_get_cell(mesh_in, i, j));
@@ -337,9 +337,9 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 	
 	            cells_out[(i * height + j)*DIRECTIONS + k] = cells_in[(ii * height + jj)*DIRECTIONS + k];
 	    }
-	}  
-
-	#pragma omp paralell for num_threads(2) schedule(static, 4)
+	}
+	
+	#pragma omp parallel for num_threads(2) schedule(guided)
 	for (i = 1; i < width-1; i += 2){
 		for ( j = 1 ; j < height-1 ; j += 4){
 			for( x = 0; x < 2 && (i+x) < (width-1); x++){

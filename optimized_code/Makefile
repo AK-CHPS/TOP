@@ -8,7 +8,6 @@ MAKEDEPEND=makedepend
 CFLAGS=-Wall -g 
 LDFLAGS=-lm -fopenmp
 OFLAGS=-O3 -ffast-math
-
 #Files
 SRC_DIR=./src
 HEADERS_DIR=./src/header
@@ -22,7 +21,7 @@ TARGET=lbm display
 all: $(TARGET)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	$(MPICC) $(CFLAGS) $(OFLAGS) -c -o $@ $< 
+	$(MPICC) $(CFLAGS) $(OFLAGS) -c -o $@ $< $(LDFLAGS)
 
 lbm: $(LBM_OBJECTS)
 	$(MPICC) $(CFLAGS) $(OFLAGS) -o $@ $^ $(LDFLAGS)

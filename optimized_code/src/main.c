@@ -81,7 +81,6 @@ void save_frame(MPI_File * fp,const Mesh * mesh, const int rank, const int size)
 
   for(i = 1 ; i < mesh->width - 1 ; i++){
     for(j = 1; j < mesh->height - 1 ; j++){
-
       //compute macrospic values
       density = get_cell_density(Mesh_get_cell(mesh, i, j));
       get_cell_velocity(v,Mesh_get_cell(mesh, i, j),density);
