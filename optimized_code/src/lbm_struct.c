@@ -24,6 +24,8 @@ void Mesh_init( Mesh * mesh, int width,  int height )
 
   mesh->poiseuille = malloc(sizeof(double) * height);
 
+  mesh->values = malloc((width-1) * (height-1) * sizeof(lbm_file_entry_t));
+
   mesh->left_in_cpt = 0;
   mesh->right_out_cpt = 0;
   mesh->bounce_cpt = 0;
@@ -51,6 +53,7 @@ void Mesh_release( Mesh *mesh )
   free(mesh->left_in_cells);
   free(mesh->right_out_cells);
   free(mesh->bounce_cells);
+  free(mesh->values);
 
   mesh->left_in_cpt = 0;
   mesh->right_out_cpt = 0;
@@ -62,7 +65,6 @@ void Mesh_release( Mesh *mesh )
 
   //free memory
   free( mesh->cells);
-
   free(mesh->poiseuille);
 
   mesh->cells = NULL;

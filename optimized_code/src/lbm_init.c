@@ -31,8 +31,8 @@ static void setup_init_state_circle_obstacle(Mesh * mesh, const lbm_comm_t * mes
   //vars
   int i,j;
 
-  for(j =  mesh_comm->y ; j <  mesh->height + mesh_comm->y ; j++){
-    for(i =  mesh_comm->x; i < mesh->width + mesh_comm->x ; i++){
+  for(i =  mesh_comm->x; i < mesh->width + mesh_comm->x ; i++){
+    for(j =  mesh_comm->y ; j <  mesh->height + mesh_comm->y ; j++){
       if ( ((i-OBSTACLE_X) * (i-OBSTACLE_X)) + ((j-OBSTACLE_Y) * (j-OBSTACLE_Y)) <= (OBSTACLE_R * OBSTACLE_R)){
         add_bounce_cell(mesh, Mesh_get_cell( mesh, i - mesh_comm->x, j - mesh_comm->y));
       }
@@ -54,13 +54,12 @@ static void setup_init_state_global_poiseuille_profile(Mesh * mesh, const lbm_co
   Vector v = {0.0,0.0};
   const double density = 1.0;
 
-  for ( j = 0 ; j < mesh->height ; j++){
-    for ( i = 0 ; i < mesh->width ; i++){
+  for ( i = 0 ; i < mesh->width; i++){
+    for ( j = 0 ; j < mesh->height; j++){
       v[0] = mesh->poiseuille[j];
       for ( k = 0 ; k < DIRECTIONS ; k++){
-          //v[0] = helper_compute_poiseuille(j + mesh_comm->y,MESH_HEIGHT);
           Mesh_get_cell(mesh, i, j)[k] = compute_equilibrium_profile(v,density,k); 
-      } 
+      }
     }
   }
 }

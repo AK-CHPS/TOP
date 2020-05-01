@@ -95,7 +95,7 @@ double get_cell_density(const lbm_mesh_cell_t cell)
 https://llvm.org/docs/Atomics.html
 
 **/
-void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, const  double cell_density)
+void get_cell_velocity(Vector v, const lbm_mesh_cell_t cell, const  double cell_density)
 {
 	//vars
 	int k,d;
@@ -125,15 +125,15 @@ void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, const  double cell_d
  * @param density Densité macroscopique du fluide sur la maille.
  * @param direction Direction pour laquelle calculer l'état d'équilibre.
 **/
-double compute_equilibrium_profile(Vector velocity,const double density, const int direction)
+double compute_equilibrium_profile(Vector velocity, const double density, const int direction)
 {
 	//vars
-	double v2;
 	double p = 0;
 	double p2 = 0;
 	double feq;
+	double v2 = 0;
 
-	//velocity norme 2 (v * v)
+
 	v2 = get_vect_norme_2(velocity,velocity);
 
 	//calc e_i * v_i / c
@@ -154,7 +154,7 @@ double compute_equilibrium_profile(Vector velocity,const double density, const i
 /**
  * Calcule le vecteur de collision entre les fluides de chacune des directions.
 **/
-void compute_cell_collision(lbm_mesh_cell_t cell_out,const lbm_mesh_cell_t cell_in)
+void compute_cell_collision(lbm_mesh_cell_t cell_out, const lbm_mesh_cell_t cell_in)
 {
 	//vars
 	int k;
@@ -283,15 +283,15 @@ void special_cells(Mesh * mesh, const lbm_comm_t * mesh_comm)
  * Calcule les collisions sur chacune des cellules.
  * @param mesh Maillage sur lequel appliquer le calcul.
 **/
-void collision(Mesh * mesh_out,const Mesh * mesh_in)
+void collision(Mesh * mesh_out, const Mesh * mesh_in)
 {
 	//vars
 	int i,j;
-	
+
 	#pragma omp parallel for num_threads(2) schedule(guided)
 	for( i = 1 ; i < mesh_in->width - 1 ; i++ ){
 		for( j = 1 ; j < mesh_in->height - 1 ; j++){
-			compute_cell_collision(Mesh_get_cell(mesh_out, i, j),Mesh_get_cell(mesh_in, i, j));
+			compute_cell_collision(Mesh_get_cell(mesh_out, i, j), Mesh_get_cell(mesh_in, i, j));
 		}
 	}
 }
@@ -322,7 +322,7 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 	        ii = (i - int_direction_matrix[k][0]);
 			jj = (j - int_direction_matrix[k][1]);
 
-		    cells_out[(i * height + j)*DIRECTIONS + k] = cells_in[(ii * height + jj)*DIRECTIONS + k];
+		    cells_out[(i * height + j) * DIRECTIONS + k] = cells_in[(ii * height + jj) * DIRECTIONS + k];
 	    }
 	} 
 
@@ -335,7 +335,7 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 		        ii = (i - int_direction_matrix[k][0]);
 				jj = (j - int_direction_matrix[k][1]);
 	
-	            cells_out[(i * height + j)*DIRECTIONS + k] = cells_in[(ii * height + jj)*DIRECTIONS + k];
+	            cells_out[(i * height + j) * DIRECTIONS + k] = cells_in[(ii * height + jj) * DIRECTIONS + k];
 	    }
 	}
 	
@@ -348,7 +348,7 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 						ii = ((i+x) - int_direction_matrix[k][0]);
 						jj = ((j+y) - int_direction_matrix[k][1]);
 
-						cells_out[((i+x) * height + (j+y))*DIRECTIONS + k] = cells_in[(ii * height + jj)*DIRECTIONS + k];
+						cells_out[((i+x) * height + (j+y)) * DIRECTIONS + k] = cells_in[(ii * height + jj) * DIRECTIONS + k];
 					}
 				}
 			}

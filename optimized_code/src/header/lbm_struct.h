@@ -15,6 +15,15 @@ typedef double *lbm_mesh_cell_t;
 /** Représentation d'un vecteur pour la manipulation des vitesses macroscopiques. **/
 typedef double Vector[DIMENSIONS];
 
+
+/********************  STRUCT  **********************/
+/** Une entrée du fichier, avec les deux grandeurs macroscopiques. **/
+typedef struct lbm_file_entry_s
+{
+	double v;
+	double density;
+} lbm_file_entry_t;
+
 /********************  STRUCT  **********************/
 /**
  * Definit un maillage pour le domaine local. Ce maillage contient une bordure d'une cellule
@@ -28,6 +37,8 @@ typedef struct Mesh
 	int width;
 	/** Largeur du maillage local (mailles fantome comprises). **/
 	int height;
+	/** tableau de velocitees et de desitees **/
+	lbm_file_entry_t *values;
 	/** Cellules d'entrées **/
 	lbm_mesh_cell_t* left_in_cells;
 	/** Cellules de sorties **/
@@ -63,14 +74,6 @@ typedef struct lbm_file_header_s
 } lbm_file_header_t;
 
 /********************  STRUCT  **********************/
-/** Une entrée du fichier, avec les deux grandeurs macroscopiques. **/
-typedef struct lbm_file_entry_s
-{
-	float v;
-	float density;
-} lbm_file_entry_t;
-
-/********************  STRUCT  **********************/
 /** Pour la lecture du fichier de sortie. **/
 typedef struct lbm_data_file_s
 {
@@ -102,7 +105,7 @@ void add_bounce_cell(Mesh* mesh, lbm_mesh_cell_t node);
 **/
 static inline lbm_mesh_cell_t Mesh_get_cell( const Mesh *mesh, int x, int y)
 {
-	return &mesh->cells[ (x * mesh->height + y) * DIRECTIONS ];
+	return &mesh->cells[ (x * mesh->height + y) * DIRECTIONS];
 }
 
 

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <omp.h>
 #include <math.h>
 #include <stdint.h>
 #include "./header/lbm_config.h"
@@ -68,40 +69,22 @@ void close_file(MPI_File* fp){
 
 void save_frame(MPI_File * fp,const Mesh * mesh, const int rank, const int size)
 {
-  lbm_file_entry_t buffer[WRITE_BUFFER_ENTRIES];
-  int i, j, cnt, offset; 
+  int i, j, offset; 
   static int it;
-  double density, norm;
   Vector v;
 
   offset = sizeof(lbm_file_header_t) + (it++ * size + rank) * ((mesh->width-2) * (mesh->height-2) * sizeof(lbm_file_entry_t));
 
-  //loop on all values
-  cnt = 0;
-
+  #pragma omp parallel for num_threads(2) schedule(guided) private(v,j)  
   for(i = 1 ; i < mesh->width - 1 ; i++){
     for(j = 1; j < mesh->height - 1 ; j++){
-      //compute macrospic values
-      density = get_cell_density(Mesh_get_cell(mesh, i, j));
-      get_cell_velocity(v,Mesh_get_cell(mesh, i, j),density);
-      norm = __builtin_sqrt(get_vect_norme_2(v,v));
-
-      //fill buffer
-      buffer[cnt].density = density;
-      buffer[cnt].v = norm;
-      cnt++;
-
-      //flush buffer if full
-      if (cnt == WRITE_BUFFER_ENTRIES){
-        MPI_File_write_at((*fp), offset, buffer, cnt * sizeof(lbm_file_entry_t), MPI_BYTE, MPI_STATUS_IGNORE);
-        offset += cnt * sizeof(lbm_file_entry_t);
-        cnt = 0;}
-    }    
+      mesh->values[(i-1) * (mesh->height-2) + (j-1)].density = get_cell_density(Mesh_get_cell(mesh, i, j));
+      get_cell_velocity(v,Mesh_get_cell(mesh, i, j), mesh->values[(i-1) * (mesh->height-2) + (j-1)].density);
+      mesh->values[(i-1) * (mesh->height-2) + (j-1)].v = __builtin_sqrt(get_vect_norme_2(v,v));
+    }
   }
 
-  //final flush
-  if (cnt != 0)
-    MPI_File_write_at((*fp), offset, buffer, cnt * sizeof(lbm_file_entry_t), MPI_BYTE, MPI_STATUS_IGNORE);
+  MPI_File_write_at((*fp), offset, mesh->values, (mesh->height-2) * (mesh->width-2) * sizeof(lbm_file_entry_t), MPI_BYTE, MPI_STATUS_IGNORE);
 }
 
 /*******************  FUNCTION  *********************/

@@ -17,7 +17,7 @@ void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, double cell_density)
 /*******************  FUNCTION  *********************/
 //collistion
 double compute_equilibrium_profile(Vector velocity,double density,int direction);
-void compute_cell_collision(lbm_mesh_cell_t cell_out,const lbm_mesh_cell_t cell_in);
+void compute_cell_collision(lbm_mesh_cell_t cell_out, const lbm_mesh_cell_t cell_in);
 
 /*******************  FUNCTION  *********************/
 //limit conditions
