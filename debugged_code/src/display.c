@@ -62,8 +62,8 @@ void open_data_file(lbm_data_file_t * file,const char * fname)
 	}
 
 	//check magick
-	//if (file->header.magick != RESULT_MAGICK)
-	//	fatal("Invalid file format.");
+	if (file->header.magick != RESULT_MAGICK)
+	  	fatal("Invalid file format.");
 
 	//allocate memory
 	file->entries = malloc(file->header.mesh_height * file->header.mesh_width * sizeof(lbm_file_entry_t));

@@ -26,7 +26,7 @@
 //       #define __FLUSH_INOUT__ concat(s,l,e,e,p)(1) //AHAH
 //result filename
 #define RESULT_FILENAME (lbm_gbl_config.output_filename)
-//#define RESULT_MAGICK 0x12345
+#define RESULT_MAGICK 0x12345
 #define WRITE_BUFFER_ENTRIES 4096
 #define WRITE_STEP_INTERVAL (lbm_gbl_config.write_interval)
 //       #define FLUSH_INOUT() __FLUSH_INOUT__      //nice one

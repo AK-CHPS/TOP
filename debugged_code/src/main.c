@@ -22,7 +22,7 @@ void write_file_header(FILE * fp,lbm_comm_t * mesh_comm)
 {
   //setup header values
   lbm_file_header_t header;
-  //header.magick      = RESULT_MAGICK;
+  header.magick      = RESULT_MAGICK;
   header.mesh_height = MESH_HEIGHT;
   header.mesh_width  = MESH_WIDTH;
   header.lines       = mesh_comm->nb_y;
@@ -144,7 +144,7 @@ int main(int argc, char * argv[])
   if (rank == RANK_MASTER)
     print_config();
 	
-  MPI_Barrier(MPI_COMM_WORLD); // k : wait for config 
+  //MPI_Barrier(MPI_COMM_WORLD); // k : wait for config 
 
   //init structures, allocate memory...
   lbm_comm_init( &mesh_comm, rank, comm_size, MESH_WIDTH, MESH_HEIGHT);
@@ -160,8 +160,6 @@ int main(int argc, char * argv[])
   //setup initial conditions on mesh
   setup_init_state( &mesh, &mesh_type, &mesh_comm);
   setup_init_state( &temp, &mesh_type, &mesh_comm);
-
-  //ils ont fait quoi avec les fichiers?
   
   //write initial condition in output file
   if (lbm_gbl_config.output_filename != NULL)
