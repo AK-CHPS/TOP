@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
-#include <omp.h>
 #include <math.h>
+#include <omp.h>
 #include <stdint.h>
 #include "./header/lbm_config.h"
 #include "./header/lbm_struct.h"
@@ -53,7 +53,8 @@ void open_output_file(lbm_comm_t * mesh_comm, int rank, MPI_File *fp)
   }
 }
 
-void close_file(MPI_File* fp){
+void close_file(MPI_File* fp)
+{
   MPI_File_close(fp);
 }
 
@@ -75,7 +76,6 @@ void save_frame(MPI_File * fp,const Mesh * mesh, const int rank, const int size)
 
   offset = sizeof(lbm_file_header_t) + (it++ * size + rank) * ((mesh->width-2) * (mesh->height-2) * sizeof(lbm_file_entry_t));
 
-  #pragma omp parallel for num_threads(2) schedule(guided) private(v,j)  
   for(i = 1 ; i < mesh->width - 1 ; i++){
     for(j = 1; j < mesh->height - 1 ; j++){
       mesh->values[(i-1) * (mesh->height-2) + (j-1)].density = get_cell_density(Mesh_get_cell(mesh, i, j));
@@ -95,7 +95,7 @@ int main(int argc, char * argv[])
   Mesh temp;
   lbm_comm_t mesh_comm;
   int i, rank, comm_size;
-  MPI_File fp;
+   MPI_File fp;
   const char * config_filename = NULL;
 
   //init MPI and get current rank and commuincator size.
@@ -114,49 +114,52 @@ int main(int argc, char * argv[])
   if (rank == RANK_MASTER)
     print_config();
 	
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD); // k : wait for config 
 
   //init structures, allocate memory...
   lbm_comm_init( &mesh_comm, rank, comm_size, MESH_WIDTH, MESH_HEIGHT);
   Mesh_init( &mesh, lbm_comm_width( &mesh_comm ), lbm_comm_height( &mesh_comm ) );
   Mesh_init( &temp, lbm_comm_width( &mesh_comm ), lbm_comm_height( &mesh_comm ) );
- 
-  // ouverture du fichier
+
+  //master open the output file
   open_output_file(&mesh_comm, rank, &fp);
 
   //setup initial conditions on mesh
   setup_init_state( &mesh, &mesh_comm);
   setup_init_state( &temp, &mesh_comm);
 
+  //ils ont fait quoi avec les fichiers?
+  
   //write initial condition in output file
   if (lbm_gbl_config.output_filename != NULL)
     save_frame(&fp, &temp, rank, comm_size);
 
   //time steps
-  for (i = 1 ; i < ITERATIONS; i++){
-    if((rank == RANK_MASTER) && (i%500 == 0))
-	     printf("Progress [%5d / %5d]\n",i,ITERATIONS-1);
+  for ( i = 1 ; i < ITERATIONS ; i++ )
+    {
+      //print progress
+      if( (rank == RANK_MASTER) && (i%500 == 0) )
+	      printf("Progress [%5d / %5d]\n",i,ITERATIONS-1);
 
-    //compute special actions (border, obstacle...)
-    special_cells( &mesh, &mesh_comm);
+      lbm_comm_ghost_exchange( &mesh_comm, &temp);
 
-    lbm_comm_ghost_exchange( &mesh_comm, &temp);
+      //compute special actions (border, obstacle...)
+      special_cells( &mesh);
 
-    //compute collision term
-    collision( &temp, &mesh);
+      lbm_comm_sync_ghosts_wait(&mesh_comm, &temp);
 
-    lbm_comm_sync_ghosts_wait(&mesh_comm, &temp);
+      // compute collision and propagation
+      collision_and_propagation(&mesh, &temp);
 
-    // propagate values from node to neighboors
-    propagation(&mesh, &temp);
+      //save step
+      if(i % WRITE_STEP_INTERVAL == 0 && lbm_gbl_config.output_filename != NULL )
+        save_frame(&fp, &temp, rank, comm_size);
+    }
 
-    //save step
-    if(i % WRITE_STEP_INTERVAL == 0 && lbm_gbl_config.output_filename != NULL )
-      save_frame(&fp, &temp, rank, comm_size);
-  }
 
   if(fp != NULL){
-      close_file(&fp);}
+    close_file(&fp);
+  }
 
   //Free memory
   lbm_comm_release( &mesh_comm );

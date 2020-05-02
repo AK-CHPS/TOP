@@ -15,13 +15,12 @@ typedef double *lbm_mesh_cell_t;
 /** Représentation d'un vecteur pour la manipulation des vitesses macroscopiques. **/
 typedef double Vector[DIMENSIONS];
 
-
 /********************  STRUCT  **********************/
 /** Une entrée du fichier, avec les deux grandeurs macroscopiques. **/
 typedef struct lbm_file_entry_s
 {
-	double v;
-	double density;
+	float v;
+	float density;
 } lbm_file_entry_t;
 
 /********************  STRUCT  **********************/
@@ -37,8 +36,6 @@ typedef struct Mesh
 	int width;
 	/** Largeur du maillage local (mailles fantome comprises). **/
 	int height;
-	/** tableau de velocitees et de desitees **/
-	lbm_file_entry_t *values;
 	/** Cellules d'entrées **/
 	lbm_mesh_cell_t* left_in_cells;
 	/** Cellules de sorties **/
@@ -59,12 +56,16 @@ typedef struct Mesh
 	int bounce_cpt;
 	/** tableau des valeurs de poiseuille pre calculees **/
 	double *poiseuille;
+	/** valeurs a sauvegarder dans le fichier **/
+	lbm_file_entry_t* values;
 } Mesh;
 
 /********************  STRUCT  **********************/
 /** Structure des en-têtes utilisée dans le fichier de sortie. **/
 typedef struct lbm_file_header_s
 {
+	/** Pour validation du format du fichier. **/
+	//uint32_t magick; // pk ?
 	/** Taille totale du maillage simulé (hors mailles fantômes). **/
 	uint32_t mesh_width;
 	/** Taille totale du maillage simulé (hors mailles fantômes). **/
@@ -105,9 +106,8 @@ void add_bounce_cell(Mesh* mesh, lbm_mesh_cell_t node);
 **/
 static inline lbm_mesh_cell_t Mesh_get_cell( const Mesh *mesh, int x, int y)
 {
-	return &mesh->cells[ (x * mesh->height + y) * DIRECTIONS];
+	return &mesh->cells[ (x * mesh->height + y) * DIRECTIONS ];
 }
-
 
 /*******************  FUNCTION  *********************/
 /**
@@ -115,6 +115,7 @@ static inline lbm_mesh_cell_t Mesh_get_cell( const Mesh *mesh, int x, int y)
 **/
 static inline lbm_mesh_cell_t Mesh_get_col( const Mesh * mesh, int x )
 {
+	//+DIRECTIONS to skip the first (ghost) line
 	return &mesh->cells[ x * mesh->height * DIRECTIONS + DIRECTIONS];
 }
 

@@ -23,9 +23,6 @@ const int int_direction_matrix[DIRECTIONS][2] = {
 	{+1,+0}, {+0,+1}, {-1,+0}, {+0,-1},
 	{+1,+1}, {-1,+1}, {-1,-1}, {+1,-1}
 };
-#else
-#error Need to defined adapted direction matrix.
-#endif
 
 const int right_direction_matrix[6] = {
 	0, 1, 2, 4, 5, 8
@@ -34,6 +31,9 @@ const int right_direction_matrix[6] = {
 const int left_direction_matrix[6] = {
     0, 2, 3, 4, 6, 7
 };
+#else
+#error Need to defined adapted direction matrix.
+#endif
 
 /********************** CONSTS **********************/
 /**
@@ -45,6 +45,7 @@ const double equil_weight[DIRECTIONS] = {
 	1.0/9.0 , 1.0/9.0 , 1.0/9.0 , 1.0/9.0,
 	1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0
 };
+
 //opposite directions, for bounce back implementation
 const int opposite_of[DIRECTIONS] = { 0, 3, 4, 1, 2, 7, 8, 5, 6 };
 #else
@@ -62,7 +63,7 @@ double get_vect_norme_2(const Vector vect1,const Vector vect2)
 	double res = 0.0;
 
 	//loop on dimensions
-	for (k = 0; k < DIMENSIONS; k++)
+	for ( k = 0 ; k < DIMENSIONS ; k++)
 		res += vect1[k] * vect2[k];
 
 	return res;
@@ -91,9 +92,6 @@ double get_cell_density(const lbm_mesh_cell_t cell)
  * Calcule la vitesse macroscopiques de la cellule en sommant ses DIRECTIONS
  * densités microscopiques.
  * @param cell_density Densité macroscopique de la cellules.
-
-https://llvm.org/docs/Atomics.html
-
 **/
 void get_cell_velocity(Vector v, const lbm_mesh_cell_t cell, const  double cell_density)
 {
@@ -109,8 +107,9 @@ void get_cell_velocity(Vector v, const lbm_mesh_cell_t cell, const  double cell_
 		temp = 0.0;
 
 		//sum all directions
-		for ( k = 0 ; k < DIRECTIONS ; k++)
+		for ( k = 0 ; k < DIRECTIONS ; k++){
 			temp += cell[k] * direction_matrix[k][d];
+		}
 		
 		//normalize
 		v[d] = temp * div;
@@ -128,11 +127,10 @@ void get_cell_velocity(Vector v, const lbm_mesh_cell_t cell, const  double cell_
 double compute_equilibrium_profile(Vector velocity, const double density, const int direction)
 {
 	//vars
-	double p = 0;
-	double p2 = 0;
+	double p;
+	double p2;
 	double feq;
-	double v2 = 0;
-
+	double v2;
 
 	v2 = get_vect_norme_2(velocity,velocity);
 
@@ -150,6 +148,7 @@ double compute_equilibrium_profile(Vector velocity, const double density, const 
 	return feq;
 }
 
+
 /*******************  FUNCTION  *********************/
 /**
  * Calcule le vecteur de collision entre les fluides de chacune des directions.
@@ -158,9 +157,8 @@ void compute_cell_collision(lbm_mesh_cell_t cell_out, const lbm_mesh_cell_t cell
 {
 	//vars
 	int k;
-	double density;
+	double density, feq;
 	Vector v;
-	double feq[DIRECTIONS];
 
 	//compute macroscopic values
 	density = get_cell_density(cell_in);
@@ -170,12 +168,9 @@ void compute_cell_collision(lbm_mesh_cell_t cell_out, const lbm_mesh_cell_t cell
 	for( k = 0 ; k < DIRECTIONS ; k++)
 	{
 		//compute f at equilibr.
-		feq[k] = compute_equilibrium_profile(v,density,k);
-    }
-
-    for( k = 0 ; k < DIRECTIONS ; k++){
+		feq = compute_equilibrium_profile(v, density, k);
 		//compute f out
-		cell_out[k] = cell_in[k] - RELAX_PARAMETER * (cell_in[k] - feq[k]);
+		cell_out[k] = cell_in[k] - RELAX_PARAMETER * (cell_in[k] - feq);
 	} 
 }
 
@@ -263,12 +258,12 @@ void compute_outflow_zou_he_const_density(lbm_mesh_cell_t cell)
 /**
  * Applique les actions spéciales liées aux conditions de bords ou aux réflexions sur l'obstacle.
 **/
-void special_cells(Mesh * mesh, const lbm_comm_t * mesh_comm)
+void special_cells(Mesh * mesh)
 {
 	for(int i = 0; i < mesh->left_in_cpt; i++){
 		compute_inflow_zou_he_poiseuille_distr(mesh, mesh->left_in_cells[i], i);		
 	}
-	
+
 	for(int i = 0; i < mesh->right_out_cpt; i++){
 		compute_outflow_zou_he_const_density(mesh->right_out_cells[i]);
 	}
@@ -288,12 +283,10 @@ void collision(Mesh * mesh_out, const Mesh * mesh_in)
 	//vars
 	int i,j;
 
-	#pragma omp parallel for num_threads(2) schedule(guided)
-	for( i = 1 ; i < mesh_in->width - 1 ; i++ ){
-		for( j = 1 ; j < mesh_in->height - 1 ; j++){
-			compute_cell_collision(Mesh_get_cell(mesh_out, i, j), Mesh_get_cell(mesh_in, i, j));
-		}
-	}
+	//loop on all inner cells
+	for( i = 1; i < mesh_in->width - 1; i++)
+		for( j = 1; j < mesh_in->height - 1; j++)
+			compute_cell_collision(Mesh_get_cell(mesh_out, i, j),Mesh_get_cell(mesh_in, i, j));
 }
 
 /*******************  FUNCTION  *********************/
@@ -302,16 +295,40 @@ void collision(Mesh * mesh_out, const Mesh * mesh_in)
  * @param mesh_out Maillage de sortie.
  * @param mesh_in Maillage d'entrée (ne doivent pas être les mêmes).
 **/
-
 void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 {
+
+
 	//vars
-	int i, j, k, z, x, y;
+	int i,j,k;
 	int ii,jj;
-    int width = mesh_out->width;
-    int height = mesh_out->height;
-    double *cells_in = mesh_in->cells;
-    double *cells_out = mesh_out->cells;
+
+	//loop on all cells
+	for ( i = 0 ; i < mesh_out->width; i++){
+		for ( j = 0 ; j < mesh_out->height ; j++){
+			//for all direction
+			for ( k  = 0 ; k < DIRECTIONS ; k++){
+				//compute destination point
+				ii = (i + direction_matrix[k][0]);
+				jj = (j + direction_matrix[k][1]);
+				//propagate to neighboor nodes
+				if ((ii >= 0 && ii < mesh_out->width) && (jj >= 0 && jj < mesh_out->height))
+					Mesh_get_cell(mesh_out, ii, jj)[k] = Mesh_get_cell(mesh_in, i, j)[k];
+			}
+		}
+	}
+}
+
+
+void collision_and_propagation(Mesh * mesh,  Mesh * temp)
+{
+	//vars
+	int i, j, k, z;
+	int ii,jj;
+    int width = mesh->width;
+    int height = mesh->height;
+    double *cells_temp = temp->cells;
+    double *cells_mesh = mesh->cells;
 
     for(j = 0; j < height-1; j++){
 		// left mesh cells
@@ -322,35 +339,50 @@ void propagation(Mesh * mesh_out, const Mesh * mesh_in)
 	        ii = (i - int_direction_matrix[k][0]);
 			jj = (j - int_direction_matrix[k][1]);
 
-		    cells_out[(i * height + j) * DIRECTIONS + k] = cells_in[(ii * height + jj) * DIRECTIONS + k];
+		    cells_mesh[(i * height + j) * DIRECTIONS + k] = cells_temp[(ii * height + jj) * DIRECTIONS + k];
 	    }
 	} 
 
 	for(j = 0; j < height-1; j++){
 		// right mesh cells
-		i = mesh_out->width-1;
+		i = width-1;
 	    for(z = 0; z < 6; z++){
 		        k = left_direction_matrix[z];
 
 		        ii = (i - int_direction_matrix[k][0]);
 				jj = (j - int_direction_matrix[k][1]);
 	
-	            cells_out[(i * height + j) * DIRECTIONS + k] = cells_in[(ii * height + jj) * DIRECTIONS + k];
+	            cells_mesh[(i * height + j) * DIRECTIONS + k] = cells_temp[(ii * height + jj) * DIRECTIONS + k];
 	    }
 	}
-	
-	#pragma omp parallel for num_threads(2) schedule(guided)
-	for (i = 1; i < width-1; i += 2){
-		for ( j = 1 ; j < height-1 ; j += 4){
-			for( x = 0; x < 2 && (i+x) < (width-1); x++){
-				for( y = 0; y < 4 && (j+y) < (height-1); y++){
-					for ( k  = 0 ; k < DIRECTIONS ; k++){
-						ii = ((i+x) - int_direction_matrix[k][0]);
-						jj = ((j+y) - int_direction_matrix[k][1]);
 
-						cells_out[((i+x) * height + (j+y)) * DIRECTIONS + k] = cells_in[(ii * height + jj) * DIRECTIONS + k];
-					}
-				}
+	/* warm up */
+	for( i = 1; i < 3; i++)
+		for( j = 1; j < height - 1; j++)
+			compute_cell_collision(Mesh_get_cell(temp, i, j),Mesh_get_cell(mesh, i, j));
+
+	//loop on all inner cells
+	for (i = 1; i < width - 3; i ++){
+		for ( j = 1 ; j < height-1 ; j ++){
+			compute_cell_collision(Mesh_get_cell(temp, (i+2), j),Mesh_get_cell(mesh, (i+2), j));
+
+			for ( k  = 0 ; k < DIRECTIONS ; k++){
+				ii = (i - int_direction_matrix[k][0]);
+				jj = (j - int_direction_matrix[k][1]);
+
+				cells_mesh[(i * height + j) * DIRECTIONS + k] = cells_temp[(ii * height + jj) * DIRECTIONS + k];
+			}
+		}
+	}
+
+	/* cool down */
+	for (i = width - 3; i < width - 1; i ++){
+		for ( j = 1 ; j < height-1 ; j ++){
+			for ( k  = 0 ; k < DIRECTIONS ; k++){
+				ii = (i - int_direction_matrix[k][0]);
+				jj = (j - int_direction_matrix[k][1]);
+
+				cells_mesh[(i * height + j) * DIRECTIONS + k] = cells_temp[(ii * height + jj) * DIRECTIONS + k];
 			}
 		}
 	}

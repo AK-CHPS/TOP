@@ -30,15 +30,15 @@ void  lbm_comm_print( lbm_comm_t *mesh_comm )
   int rank ;
   MPI_Comm_rank( MPI_COMM_WORLD, &rank );
   printf( " RANK %d ( LEFT %d RIGHT %d TOP %d BOTTOM %d) ( POSITION %d %d ) (WH %d %d ) \n",
-	  mesh_comm->id,
-	  mesh_comm->left_id,
-	  mesh_comm->right_id,
+    mesh_comm->id,
+    mesh_comm->left_id,
+    mesh_comm->right_id,
     mesh_comm->top_id,
     mesh_comm->bottom_id,
     mesh_comm->x,
-	  mesh_comm->y,
-	  mesh_comm->width,
-	  mesh_comm->height );
+    mesh_comm->y,
+    mesh_comm->width,
+    mesh_comm->height );
 }
 
 /*******************  FUNCTION  *********************/
@@ -96,7 +96,7 @@ void lbm_comm_init( lbm_comm_t * mesh_comm, int rank, int comm_size, int width, 
   //setup position
   mesh_comm->x = rank_x * width / nb_x;
   mesh_comm->y = rank_y * height / nb_y;
-	
+  
   // Compute neighbour nodes id
   mesh_comm->id  = helper_get_rank_id(nb_x,nb_y,rank_x,rank_y);
   mesh_comm->left_id  = helper_get_rank_id(nb_x,nb_y,rank_x - 1,rank_y);

@@ -10,14 +10,16 @@ const int opposite_of[DIRECTIONS];
 const double equil_weight[DIRECTIONS];
 const Vector direction_matrix[DIRECTIONS];
 
+/*******************  FUNCTION  *********************/
+//helper
 double get_vect_norme_2(const Vector vect1,const Vector vect2);
 double get_cell_density(const lbm_mesh_cell_t cell);
-void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell, double cell_density);
+void get_cell_velocity(Vector v,const lbm_mesh_cell_t cell,double cell_density);
 
 /*******************  FUNCTION  *********************/
 //collistion
 double compute_equilibrium_profile(Vector velocity,double density,int direction);
-void compute_cell_collision(lbm_mesh_cell_t cell_out, const lbm_mesh_cell_t cell_in);
+void compute_cell_collision(lbm_mesh_cell_t cell_out,const lbm_mesh_cell_t cell_in);
 
 /*******************  FUNCTION  *********************/
 //limit conditions
@@ -27,8 +29,9 @@ void compute_outflow_zou_he_const_density(lbm_mesh_cell_t mesh);
 
 /*******************  FUNCTION  *********************/
 //main functions
-void special_cells(Mesh * mesh, const lbm_comm_t * mesh_comm);
+void special_cells(Mesh * mesh);
 void collision(Mesh * mesh_out,const Mesh * mesh_in);
 void propagation(Mesh * mesh_out,const Mesh * mesh_in);
+void collision_and_propagation(Mesh * mesh,  Mesh * temp);
 
 #endif

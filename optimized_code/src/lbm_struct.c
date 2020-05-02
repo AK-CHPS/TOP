@@ -16,15 +16,13 @@ void Mesh_init( Mesh * mesh, int width,  int height )
   mesh->height = height;
 
   //alloc cells memory
-  mesh->cells = malloc( width * height  * DIRECTIONS * sizeof( double ) );
+  mesh->cells = malloc( width * height  * DIRECTIONS * sizeof(double) );
 
   mesh->left_in_cells = malloc(sizeof(lbm_mesh_cell_t) * height);
   mesh->right_out_cells = malloc(sizeof(lbm_mesh_cell_t) * height);
   mesh->bounce_cells = malloc(sizeof(lbm_mesh_cell_t) * width * 2);
 
-  mesh->poiseuille = malloc(sizeof(double) * height);
-
-  mesh->values = malloc((width-1) * (height-1) * sizeof(lbm_file_entry_t));
+  mesh->values = malloc(sizeof(lbm_file_entry_t) * (width-2) * (height-2));
 
   mesh->left_in_cpt = 0;
   mesh->right_out_cpt = 0;
@@ -34,6 +32,8 @@ void Mesh_init( Mesh * mesh, int width,  int height )
   mesh->right_out_size = height;
   mesh->bounce_size = width * 2;
 
+  mesh->poiseuille = malloc(sizeof(double) * height);
+
   //errors
   if( mesh->cells == NULL )
     {
@@ -41,6 +41,7 @@ void Mesh_init( Mesh * mesh, int width,  int height )
       abort();
     }
 }
+
 
 /*******************  FUNCTION  *********************/
 /** Libère la mémoire d'un maillage. **/
@@ -53,6 +54,7 @@ void Mesh_release( Mesh *mesh )
   free(mesh->left_in_cells);
   free(mesh->right_out_cells);
   free(mesh->bounce_cells);
+  free(mesh->poiseuille);
   free(mesh->values);
 
   mesh->left_in_cpt = 0;
@@ -64,9 +66,7 @@ void Mesh_release( Mesh *mesh )
   mesh->bounce_size = 0;
 
   //free memory
-  free( mesh->cells);
-  free(mesh->poiseuille);
-
+  free( mesh->cells );
   mesh->cells = NULL;
 }
 

@@ -6,27 +6,27 @@
 
 #include "./header/lbm_struct.h"
 
-static double helper_compute_poiseuille(const int i, const int size)
+
+double helper_compute_poiseuille(const int i, const int size)
 {
   double y = (double)(i - 1);
   double L = (double)(size - 1);
   return 4.0 * INFLOW_MAX_VELOCITY / ( L * L ) * ( L * y - y * y );
 }
 
-static void compute_poiseuille(Mesh *mesh)
+void compute_poiseuille(Mesh *mesh)
 {
   for(int j = 0; j < mesh->height; j++){
     mesh->poiseuille[j] = helper_compute_poiseuille(j, MESH_HEIGHT);
   }
 }
 
-
 /*******************  FUNCTION  *********************/
 /**
  * Initialisation de l'obstacle, on bascule les types des mailles associés à CELL_BOUNCE_BACK.
  * Ici l'obstacle est un cercle de centre (OBSTACLE_X,OBSTACLE_Y) et de rayon OBSTACLE_R.
  **/
-static void setup_init_state_circle_obstacle(Mesh * mesh, const lbm_comm_t * mesh_comm)
+void setup_init_state_circle_obstacle(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
   //vars
   int i,j;
@@ -47,7 +47,7 @@ static void setup_init_state_circle_obstacle(Mesh * mesh, const lbm_comm_t * mes
  * @param mesh Le maillage à initialiser.
  * @param mesh_type La grille d'information notifiant le type des mailles.
  **/
-static void setup_init_state_global_poiseuille_profile(Mesh * mesh, const lbm_comm_t * mesh_comm)
+void setup_init_state_global_poiseuille_profile(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
   //vars
   int i,j,k;
@@ -70,7 +70,7 @@ static void setup_init_state_global_poiseuille_profile(Mesh * mesh, const lbm_co
  * @param mesh Le maillage à initialiser.
  * @param mesh_type La grille d'information notifiant le type des mailles.
  **/
-static void setup_init_state_border(Mesh * mesh, const lbm_comm_t * mesh_comm)
+void setup_init_state_border(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
   //vars
   int i,j,k;

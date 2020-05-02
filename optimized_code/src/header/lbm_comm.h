@@ -60,9 +60,6 @@ typedef struct lbm_comm_t_s
 } lbm_comm_t;
 
 /*******************  FUNCTION  *********************/
-void save_frame(MPI_File * fp,const Mesh * mesh, const int rank, const int size);
-
-/*******************  FUNCTION  *********************/
 static inline int lbm_comm_width( lbm_comm_t *mc )
 {
 	return mc->width;
@@ -81,6 +78,6 @@ void  lbm_comm_print( lbm_comm_t *mesh );
 
 /*******************  FUNCTION  *********************/
 void lbm_comm_sync_ghosts_wait( lbm_comm_t * mesh, Mesh *mesh_to_process);
-void lbm_comm_ghost_exchange(lbm_comm_t * mesh, Mesh *mesh_to_process );
+void lbm_comm_ghost_exchange(lbm_comm_t * mesh, Mesh *mesh_to_process);
 
 #endif
