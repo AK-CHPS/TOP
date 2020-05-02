@@ -346,7 +346,7 @@ void save_frame_all_domain( FILE * fp, Mesh *source_mesh, Mesh *temp )
 	  save_frame(fp,source_mesh);
 	  /* Rank 0 receives & render other processes meshes */
 	  for( i = 1 ; i < comm_size ; i++ )
-	    { // k : il attend de recevoir dans l'ordre num des rank a changer mais je suis sur autre chose la
+	    { 
 	      MPI_Recv( temp->cells, source_mesh->width  * source_mesh->height * DIRECTIONS, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &status );
 	      save_frame(fp,temp);
 	    }
