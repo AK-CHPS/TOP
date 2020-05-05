@@ -7,3 +7,5 @@ do
 done
 
 diff output/check_resultat.txt output/check_mire.txt
+
+rm -rf output/check_resultat.txt output/check_mire.txt

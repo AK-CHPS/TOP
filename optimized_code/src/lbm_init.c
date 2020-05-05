@@ -29,12 +29,14 @@ void compute_poiseuille(Mesh *mesh)
 void setup_init_state_circle_obstacle(Mesh * mesh, const lbm_comm_t * mesh_comm)
 {
   //vars
-  int i,j;
+  int i, j, k;
 
   for(i =  mesh_comm->x; i < mesh->width + mesh_comm->x ; i++){
     for(j =  mesh_comm->y ; j <  mesh->height + mesh_comm->y ; j++){
       if ( ((i-OBSTACLE_X) * (i-OBSTACLE_X)) + ((j-OBSTACLE_Y) * (j-OBSTACLE_Y)) <= (OBSTACLE_R * OBSTACLE_R)){
         add_bounce_cell(mesh, Mesh_get_cell( mesh, i - mesh_comm->x, j - mesh_comm->y));
+        for ( k = 0 ; k < DIMENSIONS ; k++)
+          Mesh_get_cell(mesh,i,j)[k] = equil_weight[k];
       }
     }
   }

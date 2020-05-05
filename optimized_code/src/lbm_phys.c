@@ -330,32 +330,6 @@ void collision_and_propagation(Mesh * mesh,  Mesh * temp)
     double *cells_temp = temp->cells;
     double *cells_mesh = mesh->cells;
 
-    for(j = 0; j < height-1; j++){
-		// left mesh cells
-		i = 0;
-	    for(z = 0; z < 6; z++){
-	        k = right_direction_matrix[z];
-
-	        ii = (i - int_direction_matrix[k][0]);
-			jj = (j - int_direction_matrix[k][1]);
-
-		    cells_mesh[(i * height + j) * DIRECTIONS + k] = cells_temp[(ii * height + jj) * DIRECTIONS + k];
-	    }
-	} 
-
-	for(j = 0; j < height-1; j++){
-		// right mesh cells
-		i = width-1;
-	    for(z = 0; z < 6; z++){
-		        k = left_direction_matrix[z];
-
-		        ii = (i - int_direction_matrix[k][0]);
-				jj = (j - int_direction_matrix[k][1]);
-	
-	            cells_mesh[(i * height + j) * DIRECTIONS + k] = cells_temp[(ii * height + jj) * DIRECTIONS + k];
-	    }
-	}
-
 	/* warm up */
 	for( i = 1; i < 3; i++)
 		for( j = 1; j < height - 1; j++)
@@ -367,10 +341,10 @@ void collision_and_propagation(Mesh * mesh,  Mesh * temp)
 			compute_cell_collision(Mesh_get_cell(temp, (i+2), j),Mesh_get_cell(mesh, (i+2), j));
 
 			for ( k  = 0 ; k < DIRECTIONS ; k++){
-				ii = (i - int_direction_matrix[k][0]);
-				jj = (j - int_direction_matrix[k][1]);
+				ii = (i + int_direction_matrix[k][0]);
+				jj = (j + int_direction_matrix[k][1]);
 
-				cells_mesh[(i * height + j) * DIRECTIONS + k] = cells_temp[(ii * height + jj) * DIRECTIONS + k];
+				cells_mesh[(ii * height + jj) * DIRECTIONS + k] = cells_temp[(i * height + j) * DIRECTIONS + k];
 			}
 		}
 	}
@@ -378,12 +352,39 @@ void collision_and_propagation(Mesh * mesh,  Mesh * temp)
 	/* cool down */
 	for (i = width - 3; i < width - 1; i ++){
 		for ( j = 1 ; j < height-1 ; j ++){
-			for ( k  = 0 ; k < DIRECTIONS ; k++){
-				ii = (i - int_direction_matrix[k][0]);
-				jj = (j - int_direction_matrix[k][1]);
+			for ( k  = 0 ; k < DIRECTIONS ; k++)
+			{
+				ii = (i + direction_matrix[k][0]);
+				jj = (j + direction_matrix[k][1]);
 
-				cells_mesh[(i * height + j) * DIRECTIONS + k] = cells_temp[(ii * height + jj) * DIRECTIONS + k];
+				cells_mesh[(ii * height + jj) * DIRECTIONS + k] = cells_temp[(i * height + j) * DIRECTIONS + k];
 			}
 		}
+	}
+
+    for(j = 0; j < height-1; j++){
+		// left mesh cells
+		i = 0;
+	    for(z = 0; z < 6; z++){
+	        k = right_direction_matrix[z];
+
+	        ii = (i + int_direction_matrix[k][0]);
+			jj = (j + int_direction_matrix[k][1]);
+
+		    cells_mesh[(ii * height + jj) * DIRECTIONS + k] = cells_temp[(i * height + j) * DIRECTIONS + k];
+	    }
+	} 
+
+	for(j = 0; j < height-1; j++){
+		// right mesh cells
+		i = width-1;
+	    for(z = 0; z < 6; z++){
+		        k = left_direction_matrix[z];
+
+		        ii = (i + int_direction_matrix[k][0]);
+				jj = (j + int_direction_matrix[k][1]);
+	
+	            cells_mesh[(ii * height + jj) * DIRECTIONS + k] = cells_temp[(i * height + j) * DIRECTIONS + k];
+	    }
 	}
 }

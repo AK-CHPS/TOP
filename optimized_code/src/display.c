@@ -161,10 +161,8 @@ void do_checksum(lbm_data_file_t * file)
 	int pos;
 	
 	//loop on datas
-	for ( i = 0 ; i < file->header.mesh_width ; i++)
-	{
-		for ( j = 0 ; j < file->header.mesh_height ; j++)
-		{
+	for ( i = 0 ; i < file->header.mesh_width ; i++){
+		for ( j = 0 ; j < file->header.mesh_height ; j++){
 			pos = file->header.mesh_height * i + j;
 			checksum += file->entries[pos].density + file->entries[pos].v;
 		}
