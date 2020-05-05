@@ -3,10 +3,18 @@ import matplotlib.pyplot as plt
 import random
 import seaborn as sb
 import struct
-from os import sys
+import sys
 
-fin = open("resultat.raw", "rb")
-fout = open("mire.raw", "rb")
+if len(sys.argv) < 4:
+	print("analyze [filename 1] [filename 2] [number of frame]")
+	exit()
+
+frame = int(sys.argv[3])
+file1 = sys.argv[1]
+file2 = sys.argv[2]
+
+fin = open(file1, "rb")
+fout = open(file2, "rb")
 
 fin_width = int(struct.unpack('i', fin.read(4))[0])
 fin_height = int(struct.unpack('i', fin.read(4))[0])
@@ -20,7 +28,7 @@ if fin_width != fout_width and fin_height != fout_height:
 	print(fin_width, fin_height, fout_height, fout_width)
 	exit()
 
-for it in range(320):
+for it in range(frame):
 	array1 = np.zeros((fin_height, fin_width))
 	array2 = np.zeros((fin_height, fin_width))
 
@@ -39,8 +47,11 @@ for it in range(320):
 	delta = np.abs(array2 - array1)
 	plt.clf()
 	plt.title("frame n°{0}".format(it))
-	sb.heatmap(array1, cmap="YlOrRd")
+	sb.heatmap(delta, cmap="YlOrRd")
 	plt.pause(0.00001)
+
+plt.title("FERMER POUR QUITTER".format(it))
+plt.show()
 
 fin.close()
 fout.close()
