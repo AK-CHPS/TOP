@@ -23,6 +23,7 @@ void write_file_header(MPI_File fp,lbm_comm_t * mesh_comm)
 {
   //setup header values
   lbm_file_header_t header;
+  header.magick      = 12345;
   header.mesh_height = MESH_HEIGHT;
   header.mesh_width  = MESH_WIDTH;
   header.lines       = mesh_comm->nb_y;

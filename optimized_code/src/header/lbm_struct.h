@@ -65,7 +65,7 @@ typedef struct Mesh
 typedef struct lbm_file_header_s
 {
 	/** Pour validation du format du fichier. **/
-	//uint32_t magick; // pk ?
+	uint32_t magick; // pk ?
 	/** Taille totale du maillage simulé (hors mailles fantômes). **/
 	uint32_t mesh_width;
 	/** Taille totale du maillage simulé (hors mailles fantômes). **/

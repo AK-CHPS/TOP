@@ -16,10 +16,12 @@ file2 = sys.argv[2]
 fin = open(file1, "rb")
 fout = open(file2, "rb")
 
+fin_magick = int(struct.unpack('i', fin.read(4))[0]) 
 fin_width = int(struct.unpack('i', fin.read(4))[0])
 fin_height = int(struct.unpack('i', fin.read(4))[0])
 fin_lines = int(struct.unpack('i', fin.read(4))[0])
 
+fout_magick = int(struct.unpack('i', fout.read(4))[0])
 fout_width = int(struct.unpack('i', fout.read(4))[0])
 fout_height = int(struct.unpack('i', fout.read(4))[0])
 fout_lines = int(struct.unpack('i', fout.read(4))[0])
@@ -47,7 +49,7 @@ for it in range(frame):
 	delta = np.abs(array2 - array1)
 	plt.clf()
 	plt.title("frame n°{0}".format(it))
-	sb.heatmap(delta, cmap="YlOrRd")
+	sb.heatmap(array1, cmap="YlOrRd")
 	plt.pause(0.00001)
 
 plt.title("FERMER POUR QUITTER".format(it))
