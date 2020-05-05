@@ -98,11 +98,11 @@ void lbm_comm_init( lbm_comm_t * mesh_comm, int rank, int comm_size, int width, 
   mesh_comm->y = rank_y * height / nb_y;
   
   // Compute neighbour nodes id
-  mesh_comm->id  = helper_get_rank_id(nb_x,nb_y,rank_x,rank_y);
-  mesh_comm->left_id  = helper_get_rank_id(nb_x,nb_y,rank_x - 1,rank_y);
-  mesh_comm->right_id = helper_get_rank_id(nb_x,nb_y,rank_x + 1,rank_y);
-  mesh_comm->top_id  = helper_get_rank_id(nb_x,nb_y,rank_x,rank_y+1);
-  mesh_comm->bottom_id = helper_get_rank_id(nb_x,nb_y,rank_x,rank_y-1);
+  mesh_comm->id  = helper_get_rank_id(nb_x, nb_y, rank_x, rank_y);
+  mesh_comm->left_id  = helper_get_rank_id(nb_x, nb_y,rank_x - 1, rank_y);
+  mesh_comm->right_id = helper_get_rank_id(nb_x, nb_y,rank_x + 1, rank_y);
+  mesh_comm->top_id  = helper_get_rank_id(nb_x, nb_y,rank_x, rank_y+1);
+  mesh_comm->bottom_id = helper_get_rank_id(nb_x, nb_y,rank_x, rank_y-1);
 
   mesh_comm->request_cpt = 0;
 

@@ -74,7 +74,7 @@ static inline int lbm_comm_height( lbm_comm_t *mc )
 /*******************  FUNCTION  *********************/
 void lbm_comm_init( lbm_comm_t * mesh, int rank, int comm_size, int width, int height );
 void lbm_comm_release( lbm_comm_t * mesh );
-void  lbm_comm_print( lbm_comm_t *mesh );
+void lbm_comm_print( lbm_comm_t *mesh );
 
 /*******************  FUNCTION  *********************/
 void lbm_comm_sync_ghosts_wait( lbm_comm_t * mesh, Mesh *mesh_to_process);

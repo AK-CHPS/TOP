@@ -31,15 +31,14 @@ void setup_init_state_circle_obstacle(Mesh * mesh, const lbm_comm_t * mesh_comm)
   //vars
   int i, j, k;
 
-  printf("%d %d\n", mesh_comm->x, mesh_comm->y);
-
-  for(i =  mesh_comm->x; i < mesh->width + mesh_comm->x ; i++){
-    for(j =  mesh_comm->y ; j <  mesh->height + mesh_comm->y ; j++){
+  for(i =  mesh_comm->x + 1; i < ((mesh->width-1) + mesh_comm->x); i++){
+    for(j =  mesh_comm->y + 1; j <  ((mesh->height-1) + mesh_comm->y); j++){
       if (((i-OBSTACLE_X) * (i-OBSTACLE_X)) + ((j-OBSTACLE_Y) * (j-OBSTACLE_Y)) <= (OBSTACLE_R * OBSTACLE_R)){
         add_bounce_cell(mesh, Mesh_get_cell( mesh, i - mesh_comm->x, j - mesh_comm->y));
-        
-        for (k = 0; k < DIMENSIONS ; k++)
-          Mesh_get_cell(mesh,i,j)[k] = equil_weight[k];
+
+        for (k = 0; k < DIMENSIONS ; k++){
+          Mesh_get_cell(mesh,i - mesh_comm->x, j - mesh_comm->y)[k] = equil_weight[k];
+        }
       }
     }
   }
@@ -61,8 +60,8 @@ void setup_init_state_global_poiseuille_profile(Mesh * mesh, const lbm_comm_t * 
 
   for ( i = 0 ; i < mesh->width; i++){
     for ( j = 0 ; j < mesh->height; j++){
-      for ( k = 0 ; k < DIRECTIONS ; k++){
-          v[0] = mesh->poiseuille[j];
+      v[0] = mesh->poiseuille[j];
+      for(k = 0 ; k < DIRECTIONS ; k++){
           Mesh_get_cell(mesh, i, j)[k] = compute_equilibrium_profile(v,density,k); 
       }
     }
@@ -80,7 +79,7 @@ void setup_init_state_border(Mesh * mesh, const lbm_comm_t * mesh_comm)
   //vars
   int i,j,k;
 
-  for(j = 0; j < mesh->height; j++){
+  for(j = 1; j < mesh->height-1; j++){
     if(mesh_comm->left_id == -1){
       add_left_in_cell(mesh, Mesh_get_cell( mesh, 0, j));
     }
@@ -98,7 +97,7 @@ void setup_init_state_border(Mesh * mesh, const lbm_comm_t * mesh_comm)
     if(mesh_comm->bottom_id == -1){
       for(k = 0 ; k < DIRECTIONS ; k++)
         Mesh_get_cell(mesh, i, mesh->height - 1)[k] = equil_weight[k];//compute_equilibrium_profile(v,density,k);
-      add_bounce_cell(mesh, Mesh_get_cell( mesh, i, mesh->height - 1));
+      add_bounce_cell(mesh, Mesh_get_cell(mesh, i, mesh->height - 1));
     }
   }
 }
