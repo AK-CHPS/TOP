@@ -71,15 +71,61 @@ void lbm_comm_init( lbm_comm_t * mesh_comm, int rank, int comm_size, int width, 
   int nb_y;
   int rank_x;
   int rank_y;
+  int step_x, step_y;
+
+  // compute splitting
+  nb_x = comm_size;
+  nb_y = 1;
+
+  // calc current rank postition (ID)
+  rank_x = rank;
+  rank_y = 0;
+
+  // set up
+  mesh_comm->nb_x = nb_x;
+  mesh_comm->nb_y = nb_y;
+
+  step_x = width / nb_x;
+  step_y = height;
+
+  if(rank == comm_size -1){
+      //setup size (+2 for ghost cells on border)
+      mesh_comm->width = step_x + (width % nb_x) + 2;
+      mesh_comm->height = step_y + 2;
+
+      //setup position
+      mesh_comm->x = rank_x * step_x;
+      mesh_comm->y = rank_y * step_y;
+
+
+  }else{
+      //setup size (+2 for ghost cells on border)
+      mesh_comm->width = step_x + 2;
+      mesh_comm->height = step_y + 2;
+
+      //setup position
+      mesh_comm->x = rank_x * step_x;
+      mesh_comm->y = rank_y * step_y;
+  }
+
+  // Compute neighbour nodes id
+  mesh_comm->id  = helper_get_rank_id(nb_x, nb_y, rank_x, rank_y);
+  mesh_comm->left_id  = helper_get_rank_id(nb_x, nb_y,rank_x - 1, rank_y);
+  mesh_comm->right_id = helper_get_rank_id(nb_x, nb_y,rank_x + 1, rank_y);
+  mesh_comm->top_id  = helper_get_rank_id(nb_x, nb_y,rank_x, rank_y+1);
+  mesh_comm->bottom_id = helper_get_rank_id(nb_x, nb_y,rank_x, rank_y-1);
+
+  mesh_comm->request_cpt = 0;
+
+
+/**************************************************************************************
+  //check
+  if (width % comm_size != 0)
+    fatal("Can't get a 2D cut for current problem size and number of processes.");
 
   //compute splitting
   nb_x = lbm_helper_pgcd(comm_size,width);
   nb_y = comm_size / nb_x;
-
-  //check
-  assert(nb_x * nb_y == comm_size);
-  if (height % nb_y != 0)
-    fatal("Can't get a 2D cut for current problem size and number of processes.");
 
   //calc current rank position (ID)
   rank_x = rank % nb_x;
@@ -103,6 +149,8 @@ void lbm_comm_init( lbm_comm_t * mesh_comm, int rank, int comm_size, int width, 
   mesh_comm->right_id = helper_get_rank_id(nb_x, nb_y,rank_x + 1, rank_y);
   mesh_comm->top_id  = helper_get_rank_id(nb_x, nb_y,rank_x, rank_y+1);
   mesh_comm->bottom_id = helper_get_rank_id(nb_x, nb_y,rank_x, rank_y-1);
+
+*******************************************************************************************/
 
   mesh_comm->request_cpt = 0;
 

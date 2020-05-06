@@ -49,7 +49,7 @@ for it in range(frame):
 	delta = np.abs(array2 - array1)
 	plt.clf()
 	plt.title("frame n°{0}".format(it))
-	sb.heatmap(array1, cmap="YlOrRd")
+	sb.heatmap(delta, cmap="YlOrRd")
 	plt.pause(0.00001)
 
 plt.title("FERMER POUR QUITTER".format(it))

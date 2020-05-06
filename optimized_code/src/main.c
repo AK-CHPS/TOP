@@ -68,13 +68,15 @@ void close_file(MPI_File* fp)
  * @param fp Descripteur de fichier à utiliser pour l'écriture.
  * @param mesh Domaine à sauvegarder.
  **/
-void save_frame(MPI_File * fp,const Mesh * mesh, const int rank, const int size)
+void save_frame(MPI_File * fp, const Mesh * mesh, const lbm_comm_t * mesh_comm, const int rank, const int size)
 {
   int i, j, offset; 
   static int it;
   Vector v;
 
-  offset = sizeof(lbm_file_header_t) + (it++ * size + rank) * ((mesh->width-2) * (mesh->height-2) * sizeof(lbm_file_entry_t));
+  offset = sizeof(lbm_file_header_t) + (((it++ * MESH_WIDTH * MESH_HEIGHT) + (mesh_comm->x * MESH_HEIGHT)) * sizeof(lbm_file_entry_t));
+
+  /* offset = sizeof(lbm_file_header_t) + (it++ * size + rank) * ((mesh->width-2) * (mesh->height-2) * sizeof(lbm_file_entry_t)); */
 
   for(i = 1 ; i < mesh->width - 1 ; i++){
     for(j = 1; j < mesh->height - 1 ; j++){
@@ -130,7 +132,7 @@ int main(int argc, char * argv[])
   
   //write initial condition in output file
   if (lbm_gbl_config.output_filename != NULL)
-    save_frame(&fp, &temp, rank, comm_size);
+    save_frame(&fp, &temp, &mesh_comm, rank, comm_size);
 
   //time steps
   for( i = 1 ; i < ITERATIONS; i++)
@@ -151,7 +153,7 @@ int main(int argc, char * argv[])
 
       //save step
       if(i % WRITE_STEP_INTERVAL == 0 && lbm_gbl_config.output_filename != NULL )
-        save_frame(&fp, &temp, rank, comm_size);
+        save_frame(&fp, &temp, &mesh_comm, rank, comm_size);
     }
 
 

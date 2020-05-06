@@ -36,7 +36,7 @@ void setup_init_state_circle_obstacle(Mesh * mesh, const lbm_comm_t * mesh_comm)
       if (((i-OBSTACLE_X) * (i-OBSTACLE_X)) + ((j-OBSTACLE_Y) * (j-OBSTACLE_Y)) <= (OBSTACLE_R * OBSTACLE_R)){
         add_bounce_cell(mesh, Mesh_get_cell( mesh, i - mesh_comm->x, j - mesh_comm->y));
 
-        for (k = 0; k < DIMENSIONS ; k++){
+        for (k = 0; k < DIRECTIONS ; k++){
           Mesh_get_cell(mesh,i - mesh_comm->x, j - mesh_comm->y)[k] = equil_weight[k];
         }
       }
