@@ -88,6 +88,10 @@ void lbm_comm_init( lbm_comm_t * mesh_comm, int rank, int comm_size, int width, 
   step_x = width / nb_x;
   step_y = height;
 
+  if(step_x <= 3){
+    fatal("To much processus for not enough work");
+  }
+
   if(rank == comm_size -1){
       //setup size (+2 for ghost cells on border)
       mesh_comm->width = step_x + (width % nb_x) + 2;
