@@ -7,8 +7,8 @@ MAKEDEPEND=makedepend
 #flags
 CFLAGS=-Wall -g
 LDFLAGS=-lm -fopenmp
-OFLAGS=-O3
-
+OFLAGS= -03 -ffast-math -march=native 
+ 
 #Files
 SRC_DIR=./src
 HEADERS_DIR=./src/header
