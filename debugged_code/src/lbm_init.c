@@ -29,7 +29,7 @@ void init_cond_velocity_0_density_1(Mesh * mesh)
   for ( i = 0 ; i <  mesh->width ; i++)
     for ( j = 0 ; j <  mesh->height ; j++)
       for ( k = 0 ; k < DIRECTIONS ; k++)
-	Mesh_get_cell(mesh, i, j)[k] = equil_weight[k];
+	      Mesh_get_cell(mesh, i, j)[k] = equil_weight[k];
 }
 
 /*******************  FUNCTION  *********************/
@@ -43,16 +43,16 @@ void setup_init_state_circle_obstacle(Mesh * mesh, lbm_mesh_type_t * mesh_type, 
   int i,j,k;
 
   //loop on nodes
-  for ( i =  mesh_comm->x; i < mesh->width + mesh_comm->x ; i++)
+  for ( i =  mesh_comm->x + 1; i < (mesh->width-1) + mesh_comm->x ; i++)
     {
-      for ( j =  mesh_comm->y ; j <  mesh->height + mesh_comm->y ; j++)
+      for ( j =  mesh_comm->y + 1 ; j <  (mesh->height-1) + mesh_comm->y ; j++)
 	{
 	  if ( ( (i-OBSTACLE_X) * (i-OBSTACLE_X) ) + ( (j-OBSTACLE_Y) * (j-OBSTACLE_Y) ) <= OBSTACLE_R * OBSTACLE_R )
 	    {
 
 	      *( lbm_cell_type_t_get_cell( mesh_type , i - mesh_comm->x, j - mesh_comm->y) ) = CELL_BOUNCE_BACK;
-	      for ( k = 0 ; k < DIMENSIONS ; k++)
-	      	Mesh_get_cell(mesh,i,j)[k] = equil_weight[k]; //k: was mesh[i][j][k] = 0.0;
+	      for ( k = 0 ; k < DIRECTIONS ; k++)
+	      	Mesh_get_cell(mesh,i - mesh_comm->x, j - mesh_comm->y)[k] = equil_weight[k];
 	    }
 	}
     }
