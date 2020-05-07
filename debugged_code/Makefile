@@ -21,7 +21,7 @@ TARGET=lbm display
 
 all: $(TARGET)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c build
 	$(MPICC) $(CFLAGS) $(OFLAGS) -c -o $@ $< 
 
 lbm: $(LBM_OBJECTS)
@@ -29,6 +29,9 @@ lbm: $(LBM_OBJECTS)
 
 display: src/display.c
 	$(CC) $(CFLAGS) $(OFLAGS) -o $@ src/display.c
+
+build:
+	mkdir
 
 clean:
 	$(RM) $(LBM_OBJECTS)
