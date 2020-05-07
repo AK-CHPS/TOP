@@ -6,9 +6,9 @@ MAKEDEPEND=makedepend
 
 #flags
 CFLAGS=-Wall -g
-LDFLAGS=-lm -fopenmp
-OFLAGS= -03 -ffast-math -march=native 
- 
+LDFLAGS=
+OFLAGS= -03 -ffast-math -march=native
+
 #Files
 SRC_DIR=./src
 HEADERS_DIR=./src/header
@@ -18,6 +18,8 @@ LBM_HEADERS=$(wildcard $(HEADERS_DIR)/*.h)
 LBM_OBJECTS=$(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(LBM_SOURCES))
 
 TARGET=lbm display
+
+EMACS_BUF=*~ ./src/*~ ./src/header/~
 
 all: $(TARGET)
 
@@ -33,6 +35,7 @@ display: src/display.c
 clean:
 	$(RM) $(LBM_OBJECTS)
 	$(RM) $(TARGET)
+	$(RM) $(EMACS_BUF)
 
 depend:
 	$(MAKEDEPEND) -Y. $(LBM_SOURCES) src/display.c

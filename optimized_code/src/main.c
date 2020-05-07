@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
-#include <math.h>
-#include <omp.h>
 #include <stdint.h>
 #include "./header/lbm_config.h"
 #include "./header/lbm_struct.h"

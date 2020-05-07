@@ -1,0 +1,21 @@
+
+ Performance counter stats for 'mpirun -np 4 ./lbm':
+
+         71,384.12 msec task-clock                #    3.936 CPUs utilized          
+               787      context-switches          #    0.011 K/sec                  
+                55      cpu-migrations            #    0.001 K/sec                  
+             9,905      page-faults               #    0.139 K/sec                  
+   227,873,717,473      cycles                    #    3.192 GHz                    
+   115,236,557,618      stalled-cycles-frontend   #   50.57% frontend cycles idle   
+    32,972,057,603      stalled-cycles-backend    #   14.47% backend cycles idle    
+   403,510,336,273      instructions              #    1.77  insn per cycle         
+                                                  #    0.29  stalled cycles per insn
+    11,129,371,070      branches                  #  155.908 M/sec                  
+        15,597,451      branch-misses             #    0.14% of all branches        
+
+      18.136175384 seconds time elapsed
+
+      70.814341000 seconds user
+       0.395306000 seconds sys
+
+

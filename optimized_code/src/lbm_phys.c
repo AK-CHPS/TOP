@@ -1,7 +1,6 @@
 /********************  HEADERS  *********************/
 #include <assert.h>
 #include <stdlib.h>
-#include <omp.h>
 #include "./header/lbm_config.h"
 #include "./header/lbm_struct.h"
 #include "./header/lbm_phys.h"
