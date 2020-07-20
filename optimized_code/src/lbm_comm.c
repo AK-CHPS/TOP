@@ -219,11 +219,11 @@ void lbm_comm_ghost_exchange(lbm_comm_t * mesh, Mesh *mesh_to_process)
 /*******************  FUNCTION  *********************/
 void lbm_comm_sync_ghosts_wait( lbm_comm_t * mesh, Mesh *mesh_to_process)
 {
-  MPI_Waitall(mesh->request_cpt, mesh->requests, MPI_STATUS_IGNORE);
-
   lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_RECV,mesh->left_id,0);
     
   lbm_comm_sync_ghosts_horizontal(mesh,mesh_to_process,COMM_RECV,mesh->right_id,mesh->width - 1);
+
+  MPI_Waitall(mesh->request_cpt, mesh->requests, MPI_STATUS_IGNORE);
 
   mesh->request_cpt = 0;
 }

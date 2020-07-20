@@ -31,7 +31,7 @@ display: src/display.c
 	$(CC) $(CFLAGS) $(OFLAGS) -o $@ src/display.c
 
 build:
-	mkdir
+	mkdir build
 
 clean:
 	$(RM) $(LBM_OBJECTS)
